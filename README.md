@@ -1,30 +1,39 @@
-# Group Name: Crime Data Engineers
-# Group members:
-- Abdulaziz AlSuwailim
-- Sulaiman AlEiteibi
-- Abdulaziz AlSharif
-- Wadee Kharbat
-- Abdulaziz AlSenani
+# Group Name - Crime Data Engineers
+## Group members:
+- Abdulaziz AlSuwailim 230253
+- Sulaiman AlEiteibi 220391
+- Abdulaziz AlSharif 230055
+- Wadee Kharbat 230685
+- Abdulaziz AlSenani 230524
 
+## Task 1: GitHub Setup & Coordination - Abdulaziz AlSuwailim
+### Role:
+- Setup GitHub Repository
+- Coordinated with team to work in their own branches
+- Handled Pull Requests and conflicts
+- Merged branches to main branch
 
 ## Task 2: Crime Type Distribution - Abdulaziz AlSharif
 
-### Command Used
+### Instructions (Command Used)
 ```bash
 mapred streaming \
   -files mapper_task2.py,reducer.py \
   -mapper "python3 mapper_task2.py" \
   -reducer "python3 reducer.py" \
-  -input /data/chicago_crimes_sample.csv \
+  -input /data/chicago_crimes.csv \
   -output /user/abfalsharif/project/m1/task2
 ```
 
-### Top 5 Results:
-ARSON   21
-ASSAULT 878
-BATTERY 1728
-BURGLARY        316
-CONCEALED CARRY LICENSE VIOLATION       6
+### Sample Results:
+
+| Crime Type | Occurances |
+|------|------:|
+| ARSON | 21 |
+| ASSAULT | 878 |
+| BATTERY | 1728 |
+| BURGLARY | 316 |
+| CONCEALED CARRY LICENSE VIOLATION | 6 |
 
 ### Interpretation
 
@@ -35,6 +44,7 @@ This indicates that violent and property related crimes are more common in the d
 The successful execution on Hadoop, along with the correct aggregated output, confirms that the MapReduce implementation is functioning as expected and can scale to process large datasets efficiently.
 
 ### Execution Log:
+```bash
 packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar] /tmp/streamjob5557700204849138800.jar tmpDir=null
 2026-03-23 14:04:21,184 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
 2026-03-23 14:04:21,483 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
@@ -69,10 +79,26 @@ Bytes Read=2391290
 File Output Format Counters 
 Bytes Written=541
 Output directory: /user/abfalsharif/project/m1/task2
+```
 
+## Task 3: Location Hotspots - Abdulaziz AlSenani
+
+### Instructions (Command Used):
+```bash
+
+```
+
+### Sample Results:
+
+### Interpretation:
+
+### Execution Logs
+```bash
+
+```
 ## Task 4: The Time Dimension - Wadee Kharbat 
 
-### Command Used:
+### Instructions (Command Used):
 ```bash
 mapred streaming \
     -files mapper_task4.py,reducer_sum.py \
@@ -82,19 +108,22 @@ mapred streaming \
     -output /user/wkharbat/project/m1/task4
 ```
 
-### Top 5 Results
+### Sample Results
 
-2001    467301
-2002    205267
-2003    985
-2004    915
-2005    1031
+| Year | Count |
+|------|------:|
+| 2001 | 467301 |
+| 2002 | 205267 |
+| 2003 | 985 |
+| 2004 | 915 |
+| 2005 | 1031 |
 
 ### Interpretation: 
 
 Based on the extracted years and aggregated totals, we can observe the annual volume of crimes reported, allowing us to determine whether crime rates are generally increasing or decreasing over the timeline.
 
 ### Execution Logs:
+```bash
 packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar] /tmp/streamjob8528287240054164388.jar tmpDir=null
 2026-03-23 21:50:42,576 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
 2026-03-23 21:50:42,955 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
@@ -177,3 +206,116 @@ packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4
         File Output Format Counters
                 Bytes Written=245
 2026-03-23 21:52:37,017 INFO streaming.StreamJob: Output directory: /user/wkharbat/project/m1/task4
+```
+
+## Task 5: Law Enforcement Analysis - Sulaiman AlEiteibi
+
+### Instructions (Command Used):
+```bash
+mapred streaming \
+-files task5-sulaiman.py,sum_reducer.py \
+-mapper "python3 task5-sulaiman.py" \
+-reducer "python3 sum_reducer.py" \
+-input /data/chicago_crimes.csv \
+-output /user/saletieibi/project/m1/task5
+```
+
+### Results:
+```bash
+false = 571140
+true = 221932
+```
+### Interpretation:
+The results show the total number of crimes that resulted in arrest versus those that did not.
+
+From the full dataset:
+- 221,932 crimes resulted in arrest
+- 571,140 crimes did not result in arrest
+
+This means that approximately 27.98% of the crimes in the dataset resulted in an arrest, while 72.02% did not.
+
+### Execution Logs
+```bash
+packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar] /tmp/streamjob10552308248251811015.jar tmpDir=null
+2026-03-24 20:49:58,550 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
+2026-03-24 20:49:58,869 INFO client.DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
+2026-03-24 20:49:59,315 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/saletieibi/.staging/job_1771402826595_0178
+2026-03-24 20:50:01,102 INFO mapred.FileInputFormat: Total input files to process : 1
+2026-03-24 20:50:01,136 INFO net.NetworkTopology: Adding a new node: /default-rack/164.92.103.148:9866
+2026-03-24 20:50:01,137 INFO net.NetworkTopology: Adding a new node: /default-rack/146.190.147.119:9866
+2026-03-24 20:50:01,819 INFO mapreduce.JobSubmitter: number of splits:2
+2026-03-24 20:50:02,876 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1771402826595_0178
+2026-03-24 20:50:02,887 INFO mapreduce.JobSubmitter: Executing with tokens: []
+2026-03-24 20:50:03,318 INFO conf.Configuration: resource-types.xml not found
+2026-03-24 20:50:03,319 INFO resource.ResourceUtils: Unable to find 'resource-types.xml'.
+2026-03-24 20:50:03,473 INFO impl.YarnClientImpl: Submitted application application_1771402826595_0178
+2026-03-24 20:50:03,544 INFO mapreduce.Job: The url to track the job: http://master-node:8088/proxy/application_1771402826595_0178/
+2026-03-24 20:50:03,548 INFO mapreduce.Job: Running job: job_1771402826595_0178
+2026-03-24 20:50:24,402 INFO mapreduce.Job: Job job_1771402826595_0178 running in uber mode : false
+2026-03-24 20:50:24,405 INFO mapreduce.Job:  map 0% reduce 0%
+2026-03-24 20:50:54,893 INFO mapreduce.Job:  map 100% reduce 0%
+2026-03-24 20:51:09,534 INFO mapreduce.Job:  map 100% reduce 100%
+2026-03-24 20:51:12,398 INFO mapreduce.Job: Job job_1771402826595_0178 completed successfully
+2026-03-24 20:51:12,659 INFO mapreduce.Job: Counters: 54
+        File System Counters
+                FILE: Number of bytes read=7708794
+                FILE: Number of bytes written=16360823
+                FILE: Number of read operations=0
+                FILE: Number of large read operations=0
+                FILE: Number of write operations=0
+                HDFS: Number of bytes read=181964998
+                HDFS: Number of bytes written=25
+                HDFS: Number of read operations=11
+                HDFS: Number of large read operations=0
+                HDFS: Number of write operations=2
+                HDFS: Number of bytes read erasure-coded=0
+        Job Counters
+                Launched map tasks=2
+                Launched reduce tasks=1
+                Data-local map tasks=2
+                Total time spent by all maps in occupied slots (ms)=110342
+                Total time spent by all reduces in occupied slots (ms)=24264
+                Total time spent by all map tasks (ms)=55171
+                Total time spent by all reduce tasks (ms)=12132
+                Total vcore-milliseconds taken by all map tasks=55171
+                Total vcore-milliseconds taken by all reduce tasks=12132
+                Total megabyte-milliseconds taken by all map tasks=28247552
+                Total megabyte-milliseconds taken by all reduce tasks=6211584
+        Map-Reduce Framework
+                Map input records=793074
+                Map output records=793072
+                Map output bytes=6122644
+                Map output materialized bytes=7708800
+                Input split bytes=198
+                Combine input records=0
+                Combine output records=0
+                Reduce input groups=2
+                Reduce shuffle bytes=7708800
+                Reduce input records=793072
+                Reduce output records=2
+                Spilled Records=1586144
+                Shuffled Maps =2
+                Failed Shuffles=0
+                Merged Map outputs=2
+                GC time elapsed (ms)=920
+                CPU time spent (ms)=9110
+                Physical memory (bytes) snapshot=662933504
+                Virtual memory (bytes) snapshot=6567616512
+                Total committed heap usage (bytes)=347926528
+                Peak Map Physical memory (bytes)=259461120
+                Peak Map Virtual memory (bytes)=2185031680
+                Peak Reduce Physical memory (bytes)=155082752
+                Peak Reduce Virtual memory (bytes)=2197700608
+        Shuffle Errors
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        File Input Format Counters
+                Bytes Read=181964800
+        File Output Format Counters
+                Bytes Written=25
+2026-03-24 20:51:12,665 INFO streaming.StreamJob: Output directory: /user/saletieibi/project/m1/task5
+```
