@@ -70,17 +70,17 @@ File Output Format Counters
 Bytes Written=541
 Output directory: /user/abfalsharif/project/m1/task2
 
-## TASK 4 SUMMARY FOR REPORT
-Student Name: Wadee Kharbat Role: Task 4 (The Time Dimension)
+## Task 4: The Time Dimension - Wadee Kharbat 
 
 ### Command Used:
-
+```bash
 mapred streaming \
     -files mapper_task4.py,reducer_sum.py \
     -mapper "python3 mapper_task4.py" \
     -reducer "python3 reducer_sum.py" \
     -input /data/chicago_crimes.csv \
     -output /user/wkharbat/project/m1/task4
+```
 
 ### Top 5 Results
 
