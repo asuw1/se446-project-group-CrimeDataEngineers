@@ -85,16 +85,299 @@ Output directory: /user/abfalsharif/project/m1/task2
 
 ### Instructions (Command Used):
 ```bash
-
+hadoop jar /opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar \
+-files mapper_task3.py,reducer_task3.py \
+-input /data/chicago_crimes.csv \
+-output /user/aalsenani/task3_final_output \
+-mapper "python3 mapper_task3.py" \
+-reducer "python3 reducer_task3.py" > task3_final_log.txt 2>&1
 ```
 
 ### Sample Results:
+| Location Type                                      | Count |
+|----------------------------------------------------|------:|
+| ABANDONED BUILDING                                 | 829   |
+| AIRCRAFT                                           | 34    |
+| AIRPORT BUILDING NON-TERMINAL - NON-SECURE AREA    | 42    |
+| AIRPORT BUILDING NON-TERMINAL - SECURE AREA        | 16    |
+| AIRPORT EXTERIOR - NON-SECURE AREA                 | 37    |
 
 ### Interpretation:
+The MapReduce job for Task 3 analyzed the full Chicago crimes dataset by grouping all records according to Location Description and counting the number of incidents in each category. The results show that certain locations appear much more frequently than others, indicating potential crime hotspots. For example, locations such as apartments, alleys, and commercial areas have significantly higher counts compared to less common locations like airports or specialized facilities. This demonstrates that the implementation successfully processed a large-scale dataset and produced meaningful aggregated insights, allowing us to identify which types of environments are most associated with reported crimes.
 
 ### Execution Logs
 ```bash
+Last login: Wed Mar 25 13:18:18 on ttys006
 
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+Abdulazizs-MacBook-Pro-5:se446-project-group-CrimeDataEngineers abdulazizal-senani$ ls src
+mapper_task3.py		reducer_task3.py
+Abdulazizs-MacBook-Pro-5:se446-project-group-CrimeDataEngineers abdulazizal-senani$ scp src/mapper_task3.py src/reducer_task3.py aalsenani@134.209.172.50:~
+aalsenani@134.209.172.50's password: 
+mapper_task3.py                               100%  411     2.3KB/s   00:00    
+reducer_task3.py                              100%  502     2.9KB/s   00:00    
+Abdulazizs-MacBook-Pro-5:se446-project-group-CrimeDataEngineers abdulazizal-senani$ ls
+README.md	output		scripts		src		test.csv
+Abdulazizs-MacBook-Pro-5:se446-project-group-CrimeDataEngineers abdulazizal-senani$ ssh aalsenani@134.209.172.50
+aalsenani@134.209.172.50's password: 
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-170-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Wed Mar 25 10:24:46 UTC 2026
+
+  System load:  0.07               Processes:             134
+  Usage of /:   21.3% of 77.35GB   Users logged in:       1
+  Memory usage: 55%                IPv4 address for eth0: 134.209.172.50
+  Swap usage:   0%                 IPv4 address for eth0: 10.17.0.5
+
+Expanded Security Maintenance for Applications is not enabled.
+
+12 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+New release '24.04.4 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+*** System restart required ***
+Last login: Wed Mar 25 10:07:14 2026 from 188.54.226.75
+aalsenani@master-node:~$ ls
+mapper_task3.py  reducer_task3.py
+aalsenani@master-node:~$ source /etc/profile.d/hadoop.sh
+aalsenani@master-node:~$ hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+-input /data/chicago_crimes_sample.csv \
+-output /user/aalsenani/task3_sample_output \
+-mapper "python3 mapper_task3.py" \
+-reducer "python3 reducer_task3.py" > task3_log.txt 2>&1
+aalsenani@master-node:~$ cat task3_log.txt
+JAR does not exist or is not a normal file: /usr/lib/hadoop-mapreduce/hadoop-streaming.jar
+aalsenani@master-node:~$ find / -name "hadoop-streaming*.jar" 2>/dev/null
+/opt/hadoop-3.4.1/share/hadoop/tools/sources/hadoop-streaming-3.4.1-sources.jar
+/opt/hadoop-3.4.1/share/hadoop/tools/sources/hadoop-streaming-3.4.1-test-sources.jar
+/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar
+aalsenani@master-node:~$ hadoop jar /opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar \
+-input /data/chicago_crimes_sample.csv \
+-output /user/aalsenani/task3_sample_output \
+-mapper "python3 mapper_task3.py" \
+-reducer "python3 reducer_task3.py" > task3_log.txt 2>&1
+aalsenani@master-node:~$ cat task3_log.txt | tail -20
+
+2026-03-25 10:37:03,799 INFO mapreduce.Job: Counters: 14
+	Job Counters 
+		Failed map tasks=7
+		Killed map tasks=1
+		Killed reduce tasks=1
+		Launched map tasks=8
+		Other local map tasks=6
+		Data-local map tasks=2
+		Total time spent by all maps in occupied slots (ms)=187698
+		Total time spent by all reduces in occupied slots (ms)=0
+		Total time spent by all map tasks (ms)=93849
+		Total vcore-milliseconds taken by all map tasks=93849
+		Total megabyte-milliseconds taken by all map tasks=48050688
+	Map-Reduce Framework
+		CPU time spent (ms)=0
+		Physical memory (bytes) snapshot=0
+		Virtual memory (bytes) snapshot=0
+2026-03-25 10:37:03,799 ERROR streaming.StreamJob: Job not successful!
+Streaming Command Failed!
+aalsenani@master-node:~$ hdfs dfs -rm -r /user/aalsenani/task3_sample_output
+Deleted /user/aalsenani/task3_sample_output
+aalsenani@master-node:~$ hadoop jar /opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar \
+-files mapper_task3.py,reducer_task3.py \
+-input /data/chicago_crimes_sample.csv \
+-output /user/aalsenani/task3_sample_output \
+-mapper "python3 mapper_task3.py" \
+-reducer "python3 reducer_task3.py" > task3_log.txt 2>&1
+aalsenani@master-node:~$ cat task3_log.txt | tail -20
+		CPU time spent (ms)=3800
+		Physical memory (bytes) snapshot=651538432
+		Virtual memory (bytes) snapshot=6560391168
+		Total committed heap usage (bytes)=348004352
+		Peak Map Physical memory (bytes)=252006400
+		Peak Map Virtual memory (bytes)=2185666560
+		Peak Reduce Physical memory (bytes)=149856256
+		Peak Reduce Virtual memory (bytes)=2190823424
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=2391290
+	File Output Format Counters 
+		Bytes Written=2628
+2026-03-25 10:40:29,854 INFO streaming.StreamJob: Output directory: /user/aalsenani/task3_sample_output
+aalsenani@master-node:~$ hdfs dfs -cat /user/aalsenani/task3_sample_output/part-00000 | head
+ABANDONED BUILDING	2
+AIRCRAFT	1
+AIRPORT BUILDING NON-TERMINAL - NON-SECURE AREA	2
+AIRPORT EXTERIOR - NON-SECURE AREA	2
+AIRPORT EXTERIOR - SECURE AREA	3
+AIRPORT PARKING LOT	8
+AIRPORT TERMINAL LOWER LEVEL - NON-SECURE AREA	5
+AIRPORT TERMINAL LOWER LEVEL - SECURE AREA	5
+AIRPORT TERMINAL UPPER LEVEL - NON-SECURE AREA	4
+AIRPORT TERMINAL UPPER LEVEL - SECURE AREA	11
+aalsenani@master-node:~$ hadoop jar /opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar \
+-files mapper_task3.py,reducer_task3.py \
+-input /data/chicago_crimes.csv \
+-output /user/aalsenani/task3_final_output \
+-mapper "python3 mapper_task3.py" \
+-reducer "python3 reducer_task3.py" > task3_final_log.txt 2>&1
+aalsenani@master-node:~$ cat task3_final_log.txt | tail -20
+		CPU time spent (ms)=10870
+		Physical memory (bytes) snapshot=686534656
+		Virtual memory (bytes) snapshot=6559305728
+		Total committed heap usage (bytes)=348139520
+		Peak Map Physical memory (bytes)=260481024
+		Peak Map Virtual memory (bytes)=2185170944
+		Peak Reduce Physical memory (bytes)=175276032
+		Peak Reduce Virtual memory (bytes)=2190426112
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=181964800
+	File Output Format Counters 
+		Bytes Written=4761
+2026-03-25 10:50:53,088 INFO streaming.StreamJob: Output directory: /user/aalsenani/task3_final_output
+aalsenani@master-node:~$ hdfs dfs -cat /user/aalsenani/task3_final_output/part-00000 > task3_final_results.txt
+aalsenani@master-node:~$ head task3_final_results.txt
+ABANDONED BUILDING	829
+AIRCRAFT	34
+AIRPORT BUILDING NON-TERMINAL - NON-SECURE AREA	42
+AIRPORT BUILDING NON-TERMINAL - SECURE AREA	16
+AIRPORT EXTERIOR - NON-SECURE AREA	37
+AIRPORT EXTERIOR - SECURE AREA	21
+AIRPORT PARKING LOT	85
+AIRPORT TERMINAL LOWER LEVEL - NON-SECURE AREA	61
+AIRPORT TERMINAL LOWER LEVEL - SECURE AREA	42
+AIRPORT TERMINAL MEZZANINE - NON-SECURE AREA	4
+aalsenani@master-node:~$ task3_final_log.txt
+task3_final_log.txt: command not found
+aalsenani@master-node:~$ tail -40 task3_final_log.txt > task3_final_execution_log.txt
+aalsenani@master-node:~$ cat task3_final_execution_log.txt
+		Total vcore-milliseconds taken by all reduce tasks=11722
+		Total megabyte-milliseconds taken by all map tasks=29735936
+		Total megabyte-milliseconds taken by all reduce tasks=6001664
+	Map-Reduce Framework
+		Map input records=793074
+		Map output records=791479
+		Map output bytes=11136841
+		Map output materialized bytes=12719811
+		Input split bytes=198
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=212
+		Reduce shuffle bytes=12719811
+		Reduce input records=791479
+		Reduce output records=212
+		Spilled Records=1582958
+		Shuffled Maps =2
+		Failed Shuffles=0
+		Merged Map outputs=2
+		GC time elapsed (ms)=824
+		CPU time spent (ms)=10870
+		Physical memory (bytes) snapshot=686534656
+		Virtual memory (bytes) snapshot=6559305728
+		Total committed heap usage (bytes)=348139520
+		Peak Map Physical memory (bytes)=260481024
+		Peak Map Virtual memory (bytes)=2185170944
+		Peak Reduce Physical memory (bytes)=175276032
+		Peak Reduce Virtual memory (bytes)=2190426112
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=181964800
+	File Output Format Counters 
+		Bytes Written=4761
+2026-03-25 10:50:53,088 INFO streaming.StreamJob: Output directory: /user/aalsenani/task3_final_output
+aalsenani@master-node:~$ ls -l task3_final_results.txt
+-rw-rw-r-- 1 aalsenani aalsenani 4761 Mar 25 10:52 task3_final_results.txt
+aalsenani@master-node:~$ less task3_final_results.txt
+
+ABANDONED BUILDING      829
+AIRCRAFT        34
+AIRPORT BUILDING NON-TERMINAL - NON-SECURE AREA 42
+AIRPORT BUILDING NON-TERMINAL - SECURE AREA     16
+AIRPORT EXTERIOR - NON-SECURE AREA      37
+AIRPORT EXTERIOR - SECURE AREA  21
+AIRPORT PARKING LOT     85
+AIRPORT TERMINAL LOWER LEVEL - NON-SECURE AREA  61
+AIRPORT TERMINAL LOWER LEVEL - SECURE AREA      42
+AIRPORT TERMINAL MEZZANINE - NON-SECURE AREA    4
+AIRPORT TERMINAL UPPER LEVEL - NON-SECURE AREA  43
+AIRPORT TERMINAL UPPER LEVEL - SECURE AREA      133
+AIRPORT TRANSPORTATION SYSTEM (ATS)     12
+AIRPORT VENDING ESTABLISHMENT   10
+AIRPORT/AIRCRAFT        3001
+ALLEY   18349
+ANIMAL HOSPITAL 13
+APARTMENT       61235
+APPLIANCE STORE 276
+ATHLETIC CLUB   467
+ATM (AUTOMATIC TELLER MACHINE)  66
+AUTO    1370
+AUTO / BOAT / RV DEALERSHIP     96
+BANK    3325
+BANQUET HALL    2
+BAR OR TAVERN   3387
+BARBER SHOP/BEAUTY SALON        26
+BARBERSHOP      642
+BASEMENT        34
+BEACH   1
+BOAT / WATERCRAFT       5
+BOAT/WATERCRAFT 66
+BOWLING ALLEY   85
+BRIDGE  28
+CAR WASH        365
+CASINO/GAMBLING ESTABLISHMENT   6
+CEMETARY        31
+CHA APARTMENT   8342
+CHA BREEZEWAY   3
+CHA ELEVATOR    3
+CHA GROUNDS     48
+CHA HALLWAY     39
+CHA HALLWAY / STAIRWELL / ELEVATOR      62
+CHA HALLWAY/STAIRWELL/ELEVATOR  4773
+CHA LOBBY       7
+CHA PARKING LOT 57
+CHA PARKING LOT / GROUNDS       167
+CHA PARKING LOT/GROUNDS 11853
+CHA PLAY LOT    4
+CHA STAIRWELL   10
+CHURCH  6
+CHURCH / SYNAGOGUE / PLACE OF WORSHIP   224
+CHURCH PROPERTY 2
+CHURCH/SYNAGOGUE/PLACE OF WORSHIP       1346
+CLEANERS/LAUNDROMAT     1
+CLEANING STORE  786
+CLUB    18
+COACH HOUSE     3
+COIN OPERATED MACHINE   108
+COLLEGE / UNIVERSITY - GROUNDS  43
+COLLEGE / UNIVERSITY - RESIDENCE HALL   12
+COLLEGE/UNIVERSITY GROUNDS      450
 ```
 ## Task 4: The Time Dimension - Wadee Kharbat 
 
