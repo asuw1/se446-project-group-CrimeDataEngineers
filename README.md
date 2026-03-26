@@ -6,6 +6,9 @@
 - Wadee Kharbat 230685
 - Abdulaziz AlSenani 230524
 
+## Executive Summary
+This project analyzes the Chicago Crimes dataset using Hadoop MapReduce Streaming. The dataset was distributed across a two-node HDFS cluster and processed through five independent MapReduce jobs written in Python. Each job targets a specific analytical dimension: crime type distribution, location hotspots, temporal trends, and arrest rates. Mappers extract the relevant field from each CSV record and emit key-value pairs, while reducers aggregate the counts per key. Jobs were submitted via the mapred streaming command on a shared Hadoop cluster.
+
 ## Task 1: GitHub Setup & Coordination - Abdulaziz AlSuwailim
 ### Role:
 - Setup GitHub Repository
@@ -602,3 +605,13 @@ packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4
                 Bytes Written=25
 2026-03-24 20:51:12,665 INFO streaming.StreamJob: Output directory: /user/saletieibi/project/m1/task5
 ```
+
+## Member Contributions
+
+| Member | ID | Contribution |
+|---|---|---|
+| Abdulaziz AlSuwailim | 230253 | Task 1 — Set up GitHub repository, managed branches, reviewed and merged pull requests |
+| Abdulaziz AlSharif | 230055 | Task 2 — Wrote mapper and reducer for crime type distribution |
+| Abdulaziz AlSenani | 230524 | Task 3 — Wrote mapper and reducer for location hotspot analysis |
+| Wadee Kharbat | 230685 | Task 4 — Wrote mapper and reducer for yearly crime trend analysis |
+| Sulaiman AlEiteibi | 220391 | Task 5 — Wrote mapper and reducer for arrest rate analysis |
