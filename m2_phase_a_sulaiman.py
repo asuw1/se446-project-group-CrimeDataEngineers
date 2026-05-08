@@ -8,7 +8,7 @@ import sys
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, desc, count, avg, round as spark_round
 import os
-import matplotlib.pyplot as plt
+
 
 input_path = sys.argv[1] if len(sys.argv) > 1 else "data/chicago_crimes_sample.csv"
 
@@ -53,7 +53,7 @@ task1.show(truncate=False)
 # Author: Sulaiman AlEiteibi (ID: 220391)
 # ============================================
 
-# Create a temporary SQL view so we can query the DataFrame using Spark SQL
+# Creates a temporary SQL view so we can query the DataFrame using Spark SQL
 df.createOrReplaceTempView("crimes")
 
 # Count crimes by location and show the top 10 locations
@@ -78,30 +78,35 @@ task2.show(truncate=False)
 # Count crimes for each year and sort by year
 print("\nTask 3: Crime Trend Over Years")
 
-task3 = df.groupBy("Year") \
+task3 = df.where(col("Year").isNotNull()) \
+    .groupBy("Year") \
     .count() \
     .orderBy("Year")
 
 task3.show(50, truncate=False)
 
-# Save a simple line chart for local evidence
-os.makedirs("output/m2_phase_a", exist_ok=True)
+# Save a simple line chart only when running locally
+if spark.sparkContext.master.startswith("local"):
+    import matplotlib.pyplot as plt
 
-# Collect the yearly result into normal Python lists for plotting
-yearly_rows = task3.collect()
-years = [row["Year"] for row in yearly_rows]
-counts = [row["count"] for row in yearly_rows]
+    os.makedirs("output/m2_phase_a", exist_ok=True)
 
-plt.figure(figsize=(8, 5))
-plt.plot(years, counts, marker="o")
-plt.xlabel("Year")
-plt.ylabel("Crime Count")
-plt.title("Crime Trend Over Years")
-plt.grid(True)
-plt.savefig("output/m2_phase_a/task3_yearly_trend.png")
-plt.close()
+    yearly_rows = task3.collect()
+    years = [row["Year"] for row in yearly_rows]
+    counts = [row["count"] for row in yearly_rows]
 
-print("Saved chart: output/m2_phase_a/task3_yearly_trend.png")
+    plt.figure(figsize=(8, 5))
+    plt.plot(years, counts, marker="o")
+    plt.xlabel("Year")
+    plt.ylabel("Crime Count")
+    plt.title("Crime Trend Over Years")
+    plt.grid(True)
+    plt.savefig("output/m2_phase_a/task3_yearly_trend.png")
+    plt.close()
+
+    print("Saved chart: output/m2_phase_a/task3_yearly_trend.png")
+else:
+    print("Cluster mode: printed yearly table is used for Task 3 evidence.")
 
 # ============================================
 # Task 4: Arrest Rate Analysis
