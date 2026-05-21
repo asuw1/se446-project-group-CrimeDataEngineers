@@ -1,0 +1,190 @@
+26/05/21 20:25:28 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/05/21 20:25:31 INFO SparkContext: Running Spark version 3.5.4
+26/05/21 20:25:31 INFO SparkContext: OS info Linux, 5.15.0-176-generic, amd64
+26/05/21 20:25:31 INFO SparkContext: Java version 11.0.30
+26/05/21 20:25:31 INFO ResourceUtils: ==============================================================
+26/05/21 20:25:31 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/05/21 20:25:31 INFO ResourceUtils: ==============================================================
+26/05/21 20:25:31 INFO SparkContext: Submitted application: SE446_M2_Task10_Cluster_Client
+26/05/21 20:25:31 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/05/21 20:25:31 INFO ResourceProfile: Limiting resource is cpus at 1 tasks per executor
+26/05/21 20:25:31 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/05/21 20:25:31 INFO SecurityManager: Changing view acls to: aalsenani
+26/05/21 20:25:31 INFO SecurityManager: Changing modify acls to: aalsenani
+26/05/21 20:25:31 INFO SecurityManager: Changing view acls groups to: 
+26/05/21 20:25:31 INFO SecurityManager: Changing modify acls groups to: 
+26/05/21 20:25:31 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: aalsenani; groups with view permissions: EMPTY; users with modify permissions: aalsenani; groups with modify permissions: EMPTY
+26/05/21 20:25:31 INFO Utils: Successfully started service 'sparkDriver' on port 43349.
+26/05/21 20:25:31 INFO SparkEnv: Registering MapOutputTracker
+26/05/21 20:25:32 INFO SparkEnv: Registering BlockManagerMaster
+26/05/21 20:25:32 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/05/21 20:25:32 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/05/21 20:25:32 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/05/21 20:25:32 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-6f9d9121-eb24-4a8b-b122-202d81d5a7b4
+26/05/21 20:25:32 INFO MemoryStore: MemoryStore started with capacity 127.2 MiB
+26/05/21 20:25:32 INFO SparkEnv: Registering OutputCommitCoordinator
+26/05/21 20:25:32 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/05/21 20:25:32 WARN Utils: Service 'SparkUI' could not bind on port 4040. Attempting port 4041.
+26/05/21 20:25:32 INFO Utils: Successfully started service 'SparkUI' on port 4041.
+26/05/21 20:25:32 INFO SparkContext: Added JAR file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/commons-pool2-2.12.0.jar at spark://master-node:43349/jars/commons-pool2-2.12.0.jar with timestamp 1779395131058
+26/05/21 20:25:32 INFO SparkContext: Added JAR file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/kafka-clients-3.9.0.jar at spark://master-node:43349/jars/kafka-clients-3.9.0.jar with timestamp 1779395131058
+26/05/21 20:25:32 INFO SparkContext: Added JAR file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-sql-kafka-0-10_2.12-3.5.4.jar at spark://master-node:43349/jars/spark-sql-kafka-0-10_2.12-3.5.4.jar with timestamp 1779395131058
+26/05/21 20:25:32 INFO SparkContext: Added JAR file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-token-provider-kafka-0-10_2.12-3.5.4.jar at spark://master-node:43349/jars/spark-token-provider-kafka-0-10_2.12-3.5.4.jar with timestamp 1779395131058
+26/05/21 20:25:33 INFO DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
+26/05/21 20:25:34 INFO Configuration: resource-types.xml not found
+26/05/21 20:25:34 INFO ResourceUtils: Unable to find 'resource-types.xml'.
+26/05/21 20:25:34 INFO Client: Verifying our application has not requested more than the maximum memory capability of the cluster (1536 MB per container)
+26/05/21 20:25:34 INFO Client: Will allocate AM container, with 640 MB memory including 384 MB overhead
+26/05/21 20:25:34 INFO Client: Setting up container launch context for our AM
+26/05/21 20:25:34 INFO Client: Setting up the launch environment for our AM container
+26/05/21 20:25:34 INFO Client: Preparing resources for our AM container
+26/05/21 20:25:34 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/commons-pool2-2.12.0.jar -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/commons-pool2-2.12.0.jar
+26/05/21 20:25:35 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/kafka-clients-3.9.0.jar -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/kafka-clients-3.9.0.jar
+26/05/21 20:25:36 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-sql-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/spark-sql-kafka-0-10_2.12-3.5.4.jar
+26/05/21 20:25:36 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-token-provider-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/spark-token-provider-kafka-0-10_2.12-3.5.4.jar
+26/05/21 20:25:37 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/pyspark.zip -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/pyspark.zip
+26/05/21 20:25:38 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/py4j-0.10.9.7-src.zip -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/py4j-0.10.9.7-src.zip
+26/05/21 20:25:39 INFO Client: Uploading resource file:/tmp/spark-238df003-600e-4aa2-b6f6-31308de8770d/__spark_conf__980139423746275344.zip -> hdfs://master-node:9000/user/aalsenani/.sparkStaging/application_1778738889964_0069/__spark_conf__.zip
+26/05/21 20:25:40 INFO SecurityManager: Changing view acls to: aalsenani
+26/05/21 20:25:40 INFO SecurityManager: Changing modify acls to: aalsenani
+26/05/21 20:25:40 INFO SecurityManager: Changing view acls groups to: 
+26/05/21 20:25:40 INFO SecurityManager: Changing modify acls groups to: 
+26/05/21 20:25:40 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: aalsenani; groups with view permissions: EMPTY; users with modify permissions: aalsenani; groups with modify permissions: EMPTY
+26/05/21 20:25:40 INFO Client: Submitting application application_1778738889964_0069 to ResourceManager
+26/05/21 20:25:40 INFO YarnClientImpl: Submitted application application_1778738889964_0069
+26/05/21 20:25:41 INFO Client: Application report for application_1778738889964_0069 (state: ACCEPTED)
+26/05/21 20:25:41 INFO Client: 
+	 client token: N/A
+	 diagnostics: [Thu May 21 20:25:40 +0000 2026] Application is added to the scheduler and is not yet activated. Queue's AM resource limit exceeded.  Details : AM Partition = <DEFAULT_PARTITION>; AM Resource Request = <memory:768, vCores:1>; Queue Resource Limit for AM = <memory:512, vCores:1>; User AM Resource Limit of the queue = <memory:512, vCores:1>; Queue AM Resource Usage = <memory:768, vCores:1>; 
+	 ApplicationMaster host: N/A
+	 ApplicationMaster RPC port: -1
+	 queue: root.default
+	 start time: 1779395140121
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0069/
+	 user: aalsenani
+26/05/21 20:26:11 INFO Client: Application report for application_1778738889964_0069 (state: ACCEPTED)
+26/05/21 20:26:41 INFO Client: Application report for application_1778738889964_0069 (state: ACCEPTED)
+26/05/21 20:27:11 INFO Client: Application report for application_1778738889964_0069 (state: ACCEPTED)
+26/05/21 20:27:41 INFO Client: Application report for application_1778738889964_0069 (state: ACCEPTED)
+26/05/21 20:27:53 INFO YarnClientSchedulerBackend: Add WebUI Filter. org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter, Map(PROXY_HOSTS -> master-node, PROXY_URI_BASES -> http://master-node:8088/proxy/application_1778738889964_0069), /proxy/application_1778738889964_0069
+26/05/21 20:27:53 INFO Client: Application report for application_1778738889964_0069 (state: RUNNING)
+26/05/21 20:27:53 INFO Client: 
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: 164.92.103.148
+	 ApplicationMaster RPC port: -1
+	 queue: root.default
+	 start time: 1779395140121
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0069/
+	 user: aalsenani
+26/05/21 20:27:53 INFO YarnClientSchedulerBackend: Application application_1778738889964_0069 has started running.
+26/05/21 20:27:53 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 39057.
+26/05/21 20:27:53 INFO NettyBlockTransferService: Server created on master-node:39057
+26/05/21 20:27:53 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/05/21 20:27:53 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, master-node, 39057, None)
+26/05/21 20:27:53 INFO BlockManagerMasterEndpoint: Registering block manager master-node:39057 with 127.2 MiB RAM, BlockManagerId(driver, master-node, 39057, None)
+26/05/21 20:27:53 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, master-node, 39057, None)
+26/05/21 20:27:53 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, master-node, 39057, None)
+26/05/21 20:27:54 INFO SingleEventLogFileWriter: Logging events to hdfs:/spark-logs/application_1778738889964_0069.inprogress
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /jobs: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /jobs/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /jobs/job: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /jobs/job/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/stage: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/stage/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/pool: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/pool/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /storage: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /storage/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /storage/rdd: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /storage/rdd/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /environment: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /environment/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors/threadDump: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors/threadDump/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors/heapHistogram: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /executors/heapHistogram/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /static: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /api: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /jobs/job/kill: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /stages/stage/kill: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO ServerInfo: Adding filter to /metrics/json: org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter
+26/05/21 20:27:54 INFO YarnClientSchedulerBackend: SchedulerBackend is ready for scheduling beginning after waiting maxRegisteredResourcesWaitingTime: 30000000000(ns)
+26/05/21 20:27:54 INFO YarnSchedulerBackend$YarnSchedulerEndpoint: ApplicationMaster registered as NettyRpcEndpointRef(spark-client://YarnAM)
+============================================
+Task 10: Cluster Execution, Client Mode
+Author: Abdulaziz AlSenani
+Spark Version: 3.5.4
+Master: yarn
+Input: hdfs:///data/chicago_crimes.csv
+============================================
+Real Row Count: 793073
+
+Task 10 Evidence Summary
+Master: yarn
+Dataset: hdfs:///data/chicago_crimes.csv
+Real Row Count: 793073
+
+Top 10 Crime Types on Full HDFS Dataset
++-------------------+------+
+|Primary Type       |count |
++-------------------+------+
+|THEFT              |162688|
+|BATTERY            |151930|
+|CRIMINAL DAMAGE    |91241 |
+|NARCOTICS          |74127 |
+|ASSAULT            |54070 |
+|MOTOR VEHICLE THEFT|48494 |
+|BURGLARY           |39872 |
+|OTHER OFFENSE      |36893 |
+|ROBBERY            |30991 |
+|DECEPTIVE PRACTICE |30396 |
++-------------------+------+
+
+
+Crime Trend Over Years on Full HDFS Dataset
++----+------+
+|Year|count |
++----+------+
+|2001|467301|
+|2002|205266|
+|2003|985   |
+|2004|915   |
+|2005|1031  |
+|2006|796   |
+|2007|762   |
+|2008|1010  |
+|2009|910   |
+|2010|695   |
+|2011|770   |
+|2012|800   |
+|2013|714   |
+|2014|825   |
+|2015|1105  |
+|2016|1339  |
+|2017|1387  |
+|2018|1327  |
+|2019|1174  |
+|2020|1832  |
+|2021|2399  |
+|2022|4678  |
+|2023|81461 |
+|2024|880   |
+|2025|12710 |
++----+------+
+
+
+Overall Arrest Rate on Full HDFS Dataset
++---------------------------+
+|overall_arrest_rate_percent|
++---------------------------+
+|                      27.98|
++---------------------------+
+
