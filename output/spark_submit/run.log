@@ -1,0 +1,158 @@
+================================================================
+SE446 M2 -- Task 11 evidence
+Author : Abdulaziz AlSharif (ID: 230055)
+Date   : Thu May 21 12:54:16 UTC 2026
+AppId  : application_1778738889964_0044
+================================================================
+
+----- spark-submit terminal output -----
+26/05/21 12:48:22 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/05/21 12:48:23 INFO DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
+26/05/21 12:48:24 INFO Configuration: resource-types.xml not found
+26/05/21 12:48:24 INFO ResourceUtils: Unable to find 'resource-types.xml'.
+26/05/21 12:48:24 INFO Client: Verifying our application has not requested more than the maximum memory capability of the cluster (1536 MB per container)
+26/05/21 12:48:24 INFO Client: Will allocate AM container, with 1408 MB memory including 384 MB overhead
+26/05/21 12:48:24 INFO Client: Setting up container launch context for our AM
+26/05/21 12:48:24 INFO Client: Setting up the launch environment for our AM container
+26/05/21 12:48:24 INFO Client: Preparing resources for our AM container
+26/05/21 12:48:24 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/commons-pool2-2.12.0.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/commons-pool2-2.12.0.jar
+26/05/21 12:48:25 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/kafka-clients-3.9.0.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/kafka-clients-3.9.0.jar
+26/05/21 12:48:26 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-sql-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/spark-sql-kafka-0-10_2.12-3.5.4.jar
+26/05/21 12:48:27 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-token-provider-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/spark-token-provider-kafka-0-10_2.12-3.5.4.jar
+26/05/21 12:48:27 INFO Client: Uploading resource file:/home/abfalsharif/m2_spark_ml.py -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/m2_spark_ml.py
+26/05/21 12:48:28 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/pyspark.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/pyspark.zip
+26/05/21 12:48:29 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/py4j-0.10.9.7-src.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/py4j-0.10.9.7-src.zip
+26/05/21 12:48:29 INFO Client: Uploading resource file:/tmp/spark-61a10075-57fa-4064-95ad-7935d59532c1/__spark_conf__11574800315747919254.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044/__spark_conf__.zip
+26/05/21 12:48:30 INFO SecurityManager: Changing view acls to: abfalsharif
+26/05/21 12:48:30 INFO SecurityManager: Changing modify acls to: abfalsharif
+26/05/21 12:48:30 INFO SecurityManager: Changing view acls groups to: 
+26/05/21 12:48:30 INFO SecurityManager: Changing modify acls groups to: 
+26/05/21 12:48:30 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: abfalsharif; groups with view permissions: EMPTY; users with modify permissions: abfalsharif; groups with modify permissions: EMPTY
+26/05/21 12:48:30 INFO Client: Submitting application application_1778738889964_0044 to ResourceManager
+26/05/21 12:48:31 INFO YarnClientImpl: Submitted application application_1778738889964_0044
+26/05/21 12:48:32 INFO Client: Application report for application_1778738889964_0044 (state: ACCEPTED)
+26/05/21 12:48:32 INFO Client: 
+	 client token: N/A
+	 diagnostics: AM container is launched, waiting for AM container to Register with RM
+	 ApplicationMaster host: N/A
+	 ApplicationMaster RPC port: -1
+	 queue: root.default
+	 start time: 1779367710995
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0044/
+	 user: abfalsharif
+26/05/21 12:48:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:48:53 INFO Client: 
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: worker-node-1
+	 ApplicationMaster RPC port: 37639
+	 queue: root.default
+	 start time: 1779367710995
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0044/
+	 user: abfalsharif
+26/05/21 12:49:23 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:49:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:50:23 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:50:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:51:23 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:51:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:52:23 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:52:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:53:23 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:53:53 INFO Client: Application report for application_1778738889964_0044 (state: RUNNING)
+26/05/21 12:54:09 INFO Client: Application report for application_1778738889964_0044 (state: FINISHED)
+26/05/21 12:54:09 INFO Client: 
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: worker-node-1
+	 ApplicationMaster RPC port: 37639
+	 queue: root.default
+	 start time: 1779367710995
+	 final status: SUCCEEDED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0044/
+	 user: abfalsharif
+26/05/21 12:54:09 INFO Client: Deleted staging directory hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0044
+26/05/21 12:54:10 INFO ShutdownHookManager: Shutdown hook called
+26/05/21 12:54:10 INFO ShutdownHookManager: Deleting directory /tmp/spark-61a10075-57fa-4064-95ad-7935d59532c1
+26/05/21 12:54:10 INFO ShutdownHookManager: Deleting directory /tmp/spark-feb4ce8e-7c6a-4ef6-a232-b0306db68159
+
+----- yarn logs -applicationId application_1778738889964_0044  (excerpt: driver stdout) -----
+LogType:stdout
+LogLastModifiedTime:Thu May 21 12:54:11 +0000 2026
+LogLength:3284
+LogContents:
+==============================================================================
+SE446 Milestone 2 -- Phase C standalone Spark ML script
+Author : Abdulaziz AlSharif (ID: 230055)
+Env    : cluster
+==============================================================================
+Spark version : 3.5.4
+Master        : yarn
+App ID        : application_1778738889964_0044
+
+[load] reading data ...
+[cluster] raw rows: 793,073
+[load] working rows: 15,954
+root
+ |-- District: integer (nullable = true)
+ |-- PrimaryType: string (nullable = true)
+ |-- Hour: integer (nullable = true)
+ |-- Domestic_str: string (nullable = true)
+ |-- Arrest: boolean (nullable = true)
+ |-- label: integer (nullable = true)
+
+
+=== Task 5: Feature Engineering Preview ===
+Vector layout = [District, crime_index, Hour, domestic_index]
++-------------------+-----------+--------+----+------------+--------------+-------------------+-----+
+|PrimaryType        |crime_index|District|Hour|Domestic_str|domestic_index|features           |label|
++-------------------+-----------+--------+----+------------+--------------+-------------------+-----+
+|HOMICIDE           |11.0       |6       |18  |false       |0.0           |[6.0,11.0,18.0,0.0]|1    |
+|CRIMINAL DAMAGE    |2.0        |16      |12  |false       |0.0           |[16.0,2.0,12.0,0.0]|0    |
+|BATTERY            |1.0        |8       |17  |false       |0.0           |[8.0,1.0,17.0,0.0] |0    |
+|CRIMINAL DAMAGE    |2.0        |14      |21  |false       |0.0           |[14.0,2.0,21.0,0.0]|0    |
+|MOTOR VEHICLE THEFT|5.0        |16      |12  |false       |0.0           |[16.0,5.0,12.0,0.0]|0    |
++-------------------+-----------+--------+----+------------+--------------+-------------------+-----+
+only showing top 5 rows
+
+[split] train=12,854  test=3,100
+
+[training] LogisticRegression ...
+[done]     LogisticRegression in 17.4s  AUC=0.5987
+
+[training] RandomForest ...
+[done]     RandomForest in 14.6s  AUC=0.7975
+
+[training] GBT ...
+[done]     GBT in 15.8s  AUC=0.8052
+
+==============================================================================
+Task 6 -- Three-Model Comparison
+==============================================================================
+Model                      AUC     Acc      F1    Prec     Rec   Time(s)
+------------------------------------------------------------------------
+LogisticRegression      0.5987  0.7152  0.6225  0.6864  0.7152     17.44
+RandomForest            0.7975  0.8016  0.7629  0.8442  0.8016     14.56
+GBT                     0.8052  0.8361  0.8200  0.8441  0.8361     15.83
+
+Confusion matrices (label x prediction):
+  LogisticRegression:  TN=   2158  FP=     38  FN=    845  TP=     59
+  RandomForest:  TN=   2195  FP=      1  FN=    614  TP=    290
+  GBT:  TN=   2139  FP=     57  FN=    451  TP=    453
+
+==============================================================================
+Task 7 -- Random Forest Feature Importances
+==============================================================================
+  crime_index        0.9665  ######################################
+  Hour               0.0132  
+  domestic_index     0.0132  
+  District           0.0072  
+
+Best model by AUC: GBT  (AUC = 0.8052)
+[save] best model saved to: hdfs:///user/abfalsharif/project/m2/best_model
+
+=== Phase C run complete ===
+
+End of LogType:stdout
