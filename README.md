@@ -18,6 +18,7 @@ mapred streaming \
   -reducer "python3 reducer.py" \
   -input /data/chicago_crimes_sample.csv \
   -output /user/abfalsharif/project/m1/task2
+```
 
 ### Top 5 Results:
 ARSON   21
@@ -64,33 +65,26 @@ Map input records=10001
 Map output records=10000
 Reduce input groups=29
 Reduce output records=29
-File Input Format Counters 
+File Input Format Counters
 Bytes Read=2391290
-File Output Format Counters 
+File Output Format Counters
 Bytes Written=541
 Output directory: /user/abfalsharif/project/m1/task2
 
-<!--
-   Paste this block into your group's main README.md under a heading like
-   "Phase C: Deployment". It covers Task 11 only; Tasks 9 and 10 are out
-   of scope for this submission.
--->
 
 ## Phase C: Deployment -- Task 11 (spark-submit, YARN cluster mode)
 
 **Owner**: Abdulaziz AlSharif (ID: 230055)
-**Scope**: Task 11 only. Tasks 9 (local mode) and 10 (YARN client mode)
-are not part of this submission.
+**Scope**: Task 11 only. Tasks 9 (local mode) and 10 (YARN client mode) are not part of this submission.
 
 ### Artifact
 
-The standalone Spark ML script for Phase B (Tasks 5-7) is
-[`m2_spark_ml.py`](./m2_spark_ml.py). It is fully self-contained: it builds
-its own `SparkSession`, detects whether it is running under YARN via the
-spark-submit env vars, loads the Chicago Crimes CSV from HDFS, samples 2%
-for ML training (to fit the cluster's 1536 MB / 1 vCore container cap),
-trains and evaluates Logistic Regression, Random Forest and GBT, prints
-feature importances, and saves the best model.
+The standalone Spark ML script for Phase B (Tasks 5-7) is [`m2_spark_ml.py`](./m2_spark_ml.py). The Phase B logic in the script (load + feature pipeline + three-model training + evaluation + feature importances + interpretation) is Wadee Feras Kharbat's code from the group notebook, copied verbatim. Two small additions exist for Task 11 only:
+
+1. An environment check using `SPARK_YARN_STAGING_DIR` / `YARN_CONF_DIR` / `CONTAINER_ID` (the env vars spark-submit always sets in cluster mode), with a hard guard that aborts if `spark.sparkContext.master` isn't `yarn` -- this prevents the AM container from silently running `master=local[*]` and OOM-ing.
+2. Saving the best-by-AUC model to HDFS as run evidence (Hint #9 in the milestone spec).
+
+No hyperparameters, transformers, splits, or evaluation calls have been changed; the numbers this script prints under spark-submit are the same numbers the group notebook prints.
 
 ### spark-submit command
 
@@ -109,108 +103,77 @@ spark-submit \
     m2_spark_ml.py
 ```
 
-`--deploy-mode cluster` is mandatory: the master VM is small (~4 GB) and
-shared with Hadoop daemons; running the driver on master in client mode is
-OOM-killed by YARN. In cluster mode the driver runs on a worker.
+`--deploy-mode cluster` is mandatory: the master VM is small (~4 GB) and shared with Hadoop daemons; running the driver on master in client mode is OOM-killed by YARN. In cluster mode the driver runs on a worker.
 
-The milestone spec template uses `--driver-memory 512m`. On this cluster
-that was not enough -- GBT's driver-side `collectAsMap` of tree splits
-OOMs the AM. The YARN max container is 1536 MB, so we use 1024 MB driver
-+ 256 MB overhead = 1280 MB AM container (still under the cap) and GBT
-trains cleanly.
-
-### Memory budget
-
-The full Chicago Crimes dataset (~7M rows) does not fit the ML pipeline
-under a 1 GB executor budget. Following the spec, `m2_spark_ml.py`
-samples the HDFS data before training. On the SE446 cluster we sampled
-**2%** with `df.sample(fraction=0.02, seed=42)`, which yielded 15,954
-working rows after `dropna()` -- the spec allows 5% or smaller as long as
-the cluster budget is respected.
-
-### Execution evidence
-
-- **Application ID**: `application_1778738889964_0044`
-- **Final status**: `SUCCEEDED`
-- **ApplicationMaster host**: `worker-node-1`
-- **Total runtime**: ~5 min 38 s (12:48:31 → 12:54:09 UTC, 2026-05-21)
-- **Spark version**: 3.5.4
-- **Master (driver-reported)**: `yarn` (confirms the spark-submit master
-  was honored)
-
-The full driver stdout and YARN logs are stitched into
-[`output/spark_submit/run.log`](./output/spark_submit/run.log).
+The milestone spec template uses `--driver-memory 512m`. With the group's full-spec hyperparameters (RF 100 trees / depth 5, GBT 50 iter / depth 5) the driver-side `collectAsMap` of tree splits OOMs the AM at 512m. YARN's max container is 1536 MB, so we use 1024 MB driver + 256 MB overhead = 1280 MB AM container (still under the cap).
 
 ### Data
 
-```
-[load] reading data ...
-[cluster] raw rows:    793,073      (from hdfs:///data/chicago_crimes.csv)
-[load] working rows:    15,954      (after 2% sample and dropna)
-[split] train=12,854   test=3,100
-```
+Per the spec ("sample the data with `df.sample(0.05, seed=42)` or use `hdfs:///data/chicago_crimes_sample.csv` so training fits the cluster's memory budget"), this run uses the pre-sampled file:
+
+- **Source**: `hdfs:///data/chicago_crimes_sample.csv`
+- **Test rows**: 1,921 (after `dropna()`); train rows ~7,700 on the 80/20 `seed=42` split.
+
+### Execution evidence
+
+- **Application ID**: `application_1778738889964_0046`
+- **Final status**: `SUCCEEDED`
+- **ApplicationMaster host**: `worker-node-1`
+- **Total runtime**: ~3 min 37 s (13:31:56 -> 13:35:33 UTC, 2026-05-21)
+- **Spark version**: 3.5.4
+- **Master (driver-reported)**: `yarn`
+
+The full driver stdout and YARN logs are stitched into [`output/spark_submit/run.log`](./output/spark_submit/run.log).
 
 ### Task 5 - Feature engineering preview
 
 Vector layout = `[District, crime_index, Hour, domestic_index]`.
 
-| PrimaryType         | crime_index | District | Hour | Domestic_str | domestic_index | features                | label |
-|---------------------|------------:|---------:|-----:|:------------:|---------------:|:------------------------|------:|
-| HOMICIDE            | 11.0        | 6        | 18   | false        | 0.0            | `[6.0, 11.0, 18.0, 0.0]` | 1     |
-| CRIMINAL DAMAGE     | 2.0         | 16       | 12   | false        | 0.0            | `[16.0, 2.0, 12.0, 0.0]` | 0     |
-| BATTERY             | 1.0         | 8        | 17   | false        | 0.0            | `[8.0, 1.0, 17.0, 0.0]`  | 0     |
-| CRIMINAL DAMAGE     | 2.0         | 14       | 21   | false        | 0.0            | `[14.0, 2.0, 21.0, 0.0]` | 0     |
-| MOTOR VEHICLE THEFT | 5.0         | 16       | 12   | false        | 0.0            | `[16.0, 5.0, 12.0, 0.0]` | 0     |
+| PrimaryType                  | Domestic_str | District | Hour | features                  | label |
+|------------------------------|:------------:|---------:|-----:|:--------------------------|------:|
+| OFFENSE INVOLVING CHILDREN   | false        | 10       | 3    | `[10.0, 12.0, 3.0, 0.0]`   | 1     |
+| NARCOTICS                    | false        | 11       | 16   | `[11.0, 10.0, 16.0, 0.0]`  | 1     |
+| ROBBERY                      | false        | 14       | 9    | `[14.0, 7.0, 9.0, 0.0]`    | 1     |
+| CRIM SEXUAL ASSAULT          | false        | 1        | 10   | `[1.0, 25.0, 10.0, 0.0]`   | 0     |
+| CRIMINAL DAMAGE              | false        | 1        | 17   | `[1.0, 2.0, 17.0, 0.0]`    | 0     |
 
 ### Task 6 - Three-model comparison (cluster results)
 
-| Model               |     AUC | Accuracy |      F1 | Precision |  Recall | Train time (s) |
-|---------------------|--------:|---------:|--------:|----------:|--------:|---------------:|
-| LogisticRegression  |  0.5987 |   0.7152 |  0.6225 |    0.6864 |  0.7152 |          17.44 |
-| RandomForest        |  0.7975 |   0.8016 |  0.7629 |    0.8442 |  0.8016 |          14.56 |
-| **GBT** (best AUC)  |  **0.8052** | **0.8361** | **0.8200** | **0.8441** | **0.8361** | **15.83** |
+| Metric              | Random Forest | Logistic Reg | GBT          |
+|---------------------|--------------:|-------------:|-------------:|
+| AUC-ROC             | 0.7787        | 0.6654       | **0.7899**   |
+| Accuracy            | 0.8943        | 0.8740       | **0.8969**   |
+| F1 Score            | 0.8663        | 0.8206       | **0.8727**   |
+| Precision           | 0.8850        | 0.8235       | **0.8865**   |
+| Recall              | 0.8943        | 0.8740       | **0.8969**   |
+| Training time (s)   | 13.8          | 17.2         | 58.2         |
 
 **Confusion matrices** (rows = true label, columns = predicted):
 
-| Model              | TN   | FP | FN  | TP  |
-|--------------------|-----:|---:|----:|----:|
-| LogisticRegression | 2158 | 38 | 845 |  59 |
-| RandomForest       | 2195 |  1 | 614 | 290 |
-| GBT                | 2139 | 57 | 451 | 453 |
+| Model              | TN   | FP | FN  | TP |
+|--------------------|-----:|---:|----:|---:|
+| Logistic Regression| 1674 |  6 | 236 |  5 |
+| Random Forest      | 1667 | 13 | 190 | 51 |
+| GBT                | 1663 | 17 | 181 | 60 |
 
-The dataset is highly imbalanced (~71% no-arrest vs. 29% arrest), which is
-why Logistic Regression's accuracy looks reasonable at 0.72 but its true
-positive rate is terrible (TP=59 vs FN=845): it almost always predicts
-"no arrest". Tree-based models do far better at picking out the minority
-class. GBT wins on both AUC and the TP/FN balance.
+The test set is heavily imbalanced -- 1,680 no-arrest rows vs. 241 arrest rows (~87.5% / 12.5%). Logistic Regression posts 0.874 accuracy but only catches 5 of the 241 arrests (TP=5, FN=236); it's essentially predicting "no arrest" almost everywhere. Tree-based models recover real signal: RF lifts true positives to 51 and GBT to 60, while keeping false positives in single/low double digits. GBT wins on every metric except training time.
 
 ### Task 7 - Random Forest feature importances
 
 ```
-crime_index        0.9665  ######################################
-Hour               0.0132
-domestic_index     0.0132
-District           0.0072
+crime_index        0.8898  ###################################
+Hour               0.0514  ##
+District           0.0362  #
+domestic_index     0.0225
 ```
 
-`crime_index` dominates with 96.65% of the importance mass, which matches
-the M1 / Task 4 arrest-rate analysis: arrest probability is mostly a
-function of crime type (e.g. NARCOTICS / PROSTITUTION have very high
-arrest rates, THEFT / BURGLARY very low). `Hour` and `Domestic` are
-secondary; `District` is essentially noise at this sample size.
+`crime_index` carries ~89% of the importance mass, which matches the M1 / Task 4 arrest-rate analysis: arrest probability is driven mostly by crime type (NARCOTICS, PROSTITUTION etc. arrest at very high rates; THEFT / BURGLARY very low). `Hour`, `District`, and `Domestic` are secondary signals.
 
-This also explains why Logistic Regression underperforms so badly:
-arrest probability is a sharply non-linear function of crime category
-(an ordinal-encoded feature). LR fits a single linear coefficient on
-`crime_index`, which cannot express "NARCOTICS → very likely arrest;
-THEFT → very unlikely arrest". Tree-based models split on `crime_index`
-values directly and capture this immediately.
+This also explains why Logistic Regression underperforms: it treats the ordinal `crime_index` as a continuous, linearly-correlated feature, which it isn't. Tree models split on `crime_index` values directly and capture the non-linear, "lookup-table" shape of the arrest rate.
 
 ### Saved model
 
-The best classifier (GBT, AUC = 0.8052) is persisted to HDFS at
-`hdfs:///user/abfalsharif/project/m2/best_model` (matches Hint #9 in the
-milestone spec).
+The best classifier (GBT, AUC = 0.7899) is persisted to HDFS at `hdfs:///user/abfalsharif/project/m2/best_model` (matches Hint #9 in the milestone spec).
 
 ### How to reproduce
 
@@ -223,176 +186,4 @@ chmod +x run_task11_spark_submit.sh
 ./run_task11_spark_submit.sh
 ```
 
-Detailed steps and troubleshooting are in
-[`RUNBOOK_TASK11.md`](./RUNBOOK_TASK11.md). The full evidence files are:
-
-- [`output/spark_submit/run.log`](./output/spark_submit/run.log) -- combined
-  spark-submit + driver stdout (the required evidence).
-- [`output/spark_submit/submit.txt`](./output/spark_submit/submit.txt) --
-  raw `spark-submit` terminal output.
-- [`output/spark_submit/yarn_logs_application_1778738889964_0044.txt`](./output/spark_submit/) --
-  full YARN logs (driver + executors).
-
-
-<!--
-   Paste this block into your group's main README.md under a heading like
-   "Phase C: Deployment". It covers Task 11 only; Tasks 9 and 10 are out
-   of scope for this submission.
--->
-
-## Phase C: Deployment -- Task 11 (spark-submit, YARN cluster mode)
-
-**Owner**: Abdulaziz AlSharif (ID: 230055)
-**Scope**: Task 11 only. Tasks 9 (local mode) and 10 (YARN client mode)
-are not part of this submission.
-
-### Artifact
-
-The standalone Spark ML script for Phase B (Tasks 5-7) is
-[`m2_spark_ml.py`](./m2_spark_ml.py). It is fully self-contained: it builds
-its own `SparkSession`, detects whether it is running under YARN via the
-spark-submit env vars, loads the Chicago Crimes CSV from HDFS, samples 2%
-for ML training (to fit the cluster's 1536 MB / 1 vCore container cap),
-trains and evaluates Logistic Regression, Random Forest and GBT, prints
-feature importances, and saves the best model.
-
-### spark-submit command
-
-```bash
-spark-submit \
-    --master yarn \
-    --deploy-mode cluster \
-    --driver-memory 1024m \
-    --num-executors 1 \
-    --executor-memory 1g \
-    --executor-cores 1 \
-    --conf spark.driver.maxResultSize=128m \
-    --conf spark.yarn.am.memoryOverhead=256 \
-    --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=python3.12 \
-    --conf spark.executorEnv.PYSPARK_PYTHON=python3.12 \
-    m2_spark_ml.py
-```
-
-`--deploy-mode cluster` is mandatory: the master VM is small (~4 GB) and
-shared with Hadoop daemons; running the driver on master in client mode is
-OOM-killed by YARN. In cluster mode the driver runs on a worker.
-
-The milestone spec template uses `--driver-memory 512m`. On this cluster
-that was not enough -- GBT's driver-side `collectAsMap` of tree splits
-OOMs the AM. The YARN max container is 1536 MB, so we use 1024 MB driver
-+ 256 MB overhead = 1280 MB AM container (still under the cap) and GBT
-trains cleanly.
-
-### Memory budget
-
-The full Chicago Crimes dataset (~7M rows) does not fit the ML pipeline
-under a 1 GB executor budget. Following the spec, `m2_spark_ml.py`
-samples the HDFS data before training. On the SE446 cluster we sampled
-**2%** with `df.sample(fraction=0.02, seed=42)`, which yielded 15,954
-working rows after `dropna()` -- the spec allows 5% or smaller as long as
-the cluster budget is respected.
-
-### Execution evidence
-
-- **Application ID**: `application_1778738889964_0044`
-- **Final status**: `SUCCEEDED`
-- **ApplicationMaster host**: `worker-node-1`
-- **Total runtime**: ~5 min 38 s (12:48:31 → 12:54:09 UTC, 2026-05-21)
-- **Spark version**: 3.5.4
-- **Master (driver-reported)**: `yarn` (confirms the spark-submit master
-  was honored)
-
-The full driver stdout and YARN logs are stitched into
-[`output/spark_submit/run.log`](./output/spark_submit/run.log).
-
-### Data
-
-```
-[load] reading data ...
-[cluster] raw rows:    793,073      (from hdfs:///data/chicago_crimes.csv)
-[load] working rows:    15,954      (after 2% sample and dropna)
-[split] train=12,854   test=3,100
-```
-
-### Task 5 - Feature engineering preview
-
-Vector layout = `[District, crime_index, Hour, domestic_index]`.
-
-| PrimaryType         | crime_index | District | Hour | Domestic_str | domestic_index | features                | label |
-|---------------------|------------:|---------:|-----:|:------------:|---------------:|:------------------------|------:|
-| HOMICIDE            | 11.0        | 6        | 18   | false        | 0.0            | `[6.0, 11.0, 18.0, 0.0]` | 1     |
-| CRIMINAL DAMAGE     | 2.0         | 16       | 12   | false        | 0.0            | `[16.0, 2.0, 12.0, 0.0]` | 0     |
-| BATTERY             | 1.0         | 8        | 17   | false        | 0.0            | `[8.0, 1.0, 17.0, 0.0]`  | 0     |
-| CRIMINAL DAMAGE     | 2.0         | 14       | 21   | false        | 0.0            | `[14.0, 2.0, 21.0, 0.0]` | 0     |
-| MOTOR VEHICLE THEFT | 5.0         | 16       | 12   | false        | 0.0            | `[16.0, 5.0, 12.0, 0.0]` | 0     |
-
-### Task 6 - Three-model comparison (cluster results)
-
-| Model               |     AUC | Accuracy |      F1 | Precision |  Recall | Train time (s) |
-|---------------------|--------:|---------:|--------:|----------:|--------:|---------------:|
-| LogisticRegression  |  0.5987 |   0.7152 |  0.6225 |    0.6864 |  0.7152 |          17.44 |
-| RandomForest        |  0.7975 |   0.8016 |  0.7629 |    0.8442 |  0.8016 |          14.56 |
-| **GBT** (best AUC)  |  **0.8052** | **0.8361** | **0.8200** | **0.8441** | **0.8361** | **15.83** |
-
-**Confusion matrices** (rows = true label, columns = predicted):
-
-| Model              | TN   | FP | FN  | TP  |
-|--------------------|-----:|---:|----:|----:|
-| LogisticRegression | 2158 | 38 | 845 |  59 |
-| RandomForest       | 2195 |  1 | 614 | 290 |
-| GBT                | 2139 | 57 | 451 | 453 |
-
-The dataset is highly imbalanced (~71% no-arrest vs. 29% arrest), which is
-why Logistic Regression's accuracy looks reasonable at 0.72 but its true
-positive rate is terrible (TP=59 vs FN=845): it almost always predicts
-"no arrest". Tree-based models do far better at picking out the minority
-class. GBT wins on both AUC and the TP/FN balance.
-
-### Task 7 - Random Forest feature importances
-
-```
-crime_index        0.9665  ######################################
-Hour               0.0132
-domestic_index     0.0132
-District           0.0072
-```
-
-`crime_index` dominates with 96.65% of the importance mass, which matches
-the M1 / Task 4 arrest-rate analysis: arrest probability is mostly a
-function of crime type (e.g. NARCOTICS / PROSTITUTION have very high
-arrest rates, THEFT / BURGLARY very low). `Hour` and `Domestic` are
-secondary; `District` is essentially noise at this sample size.
-
-This also explains why Logistic Regression underperforms so badly:
-arrest probability is a sharply non-linear function of crime category
-(an ordinal-encoded feature). LR fits a single linear coefficient on
-`crime_index`, which cannot express "NARCOTICS → very likely arrest;
-THEFT → very unlikely arrest". Tree-based models split on `crime_index`
-values directly and capture this immediately.
-
-### Saved model
-
-The best classifier (GBT, AUC = 0.8052) is persisted to HDFS at
-`hdfs:///user/abfalsharif/project/m2/best_model` (matches Hint #9 in the
-milestone spec).
-
-### How to reproduce
-
-```bash
-# from your laptop
-scp m2_spark_ml.py run_task11_spark_submit.sh abfalsharif@134.209.172.50:~/
-
-ssh abfalsharif@134.209.172.50
-chmod +x run_task11_spark_submit.sh
-./run_task11_spark_submit.sh
-```
-
-Detailed steps and troubleshooting are in
-[`RUNBOOK_TASK11.md`](./RUNBOOK_TASK11.md). The full evidence files are:
-
-- [`output/spark_submit/run.log`](./output/spark_submit/run.log) -- combined
-  spark-submit + driver stdout (the required evidence).
-- [`output/spark_submit/submit.txt`](./output/spark_submit/submit.txt) --
-  raw `spark-submit` terminal output.
-- [`output/spark_submit/yarn_logs_application_1778738889964_0044.txt`](./output/spark_submit/) --
-  full YARN logs (driver + executors).
+Detailed steps and troubleshooting are in [`docs/RUNBOOK_TASK11.md`](./docs/RUNBOOK_TASK11.md). The evidence file [`output/spark_submit/run.log`](./output/spark_submit/run.log) contains the combined `spark-submit` terminal output plus the driver stdout extracted from `yarn logs -applicationId application_1778738889964_0046` — i.e. everything required by the spec.

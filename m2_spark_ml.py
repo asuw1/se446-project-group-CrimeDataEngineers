@@ -1,63 +1,49 @@
-# ============================================================================
-# SE446 -- Milestone 2: Spark ML Pipeline (Arrest Prediction)
-# Group X  --  Chicago Crime Analytics
+# ============================================
+# SE446 - Milestone 2: Spark ML Pipeline
+# Group: CrimeDataEngineers
 #
-# Phase C, Task 11: spark-submit on YARN (cluster deploy mode)
-#   Author: Abdulaziz AlSharif (ID: 230055)
+# Task 5-6: Wadee Feras Kharbat (ID: 230685)
+# Task 7:   Wadee Feras Kharbat (ID: 230685)
+# Task 11 (spark-submit packaging + cluster deployment):
+#          Abdulaziz AlSharif (ID: 230055)
 #
-# This standalone script implements Phase B (Tasks 5-7) of Milestone 2 in
-# a form that can be submitted to YARN with:
-#
-#   spark-submit --master yarn --deploy-mode cluster m2_spark_ml.py
-#
-# A local fallback path is included so the script can be smoke-tested on a
-# laptop before submitting -- but the submission target is Task 11 only;
-# Tasks 9 (local execution) and 10 (YARN client mode) are out of scope.
-#
-# Environment is detected automatically. When running on the cluster, the
-# script reads the full Chicago Crimes dataset from HDFS and samples 5% for
-# ML training (per the milestone spec memory budget). When running locally
-# or on Colab, it generates 10,000 realistic rows in-memory (same generator
-# as the W09B lab notebook).
-# ============================================================================
+# The Phase B logic below (data load, feature pipeline, three-model
+# training, evaluation, feature importances, interpretation) is Wadee's
+# code from the group notebook, copied verbatim except for two
+# Task-11-only additions:
+#   1. Environment detection + a guard that aborts if --master yarn was
+#      silently replaced by local mode (this happens inside the YARN AM
+#      container if you probe HDFS via the CLI -- it isn't on PATH there).
+#   2. Saving the best model (by AUC) to HDFS as evidence (Hint #9 in the
+#      milestone spec).
+# No model parameters, transformers, splits or evaluation calls have been
+# changed -- the numbers this script prints when run via spark-submit are
+# the same numbers Wadee's notebook prints.
+# ============================================
+import os, sys, time, subprocess
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, hour, to_timestamp
+from pyspark.ml.feature import StringIndexer, VectorAssembler
+from pyspark.ml import Pipeline
+from pyspark.ml.classification import RandomForestClassifier, LogisticRegression, GBTClassifier
+from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator
 
-import os
-import sys
-import time
-import subprocess
 
-
-# ----------------------------------------------------------------------------
-# Environment detection
-#
-# In YARN cluster deploy mode the driver runs inside the AM container, which
-# does NOT have the `hdfs` CLI on PATH. The original "shell out to hdfs"
-# probe therefore falls through to "local", and the script ends up forcing
-# `master("local[*]")` -- which silently overrides the `--master yarn` we
-# passed to spark-submit, runs everything in a single 1 GB driver heap, and
-# OOMs as soon as GBT trains. Detect via the env vars spark-submit always
-# sets in cluster mode instead.
-# ----------------------------------------------------------------------------
+# --- Task 11 scaffolding: environment detection ---------------------------
+# Inside the YARN AM container the `hdfs` CLI is not on PATH, so probing it
+# returns "local" and a downstream `.master("local[*]")` silently overrides
+# the `--master yarn` passed to spark-submit. We detect via env vars that
+# spark-submit always sets in cluster mode.
 def detect_environment():
-    """Return one of: 'cluster', 'colab', 'local'."""
-    if "google.colab" in sys.modules:
-        return "colab"
-
-    # Signals that we are running under spark-submit on YARN.
     if any(os.environ.get(v) for v in (
-        "SPARK_YARN_STAGING_DIR",
-        "YARN_CONF_DIR",
-        "CONTAINER_ID",            # YARN container env var
-    )):
+            "SPARK_YARN_STAGING_DIR", "YARN_CONF_DIR", "CONTAINER_ID")):
         return "cluster"
-
-    # Fallback: HDFS CLI present (covers interactive runs on master node).
     try:
-        result = subprocess.run(
-            ["hdfs", "dfs", "-test", "-e", "/data/chicago_crimes.csv"],
+        r = subprocess.run(
+            ["hdfs", "dfs", "-test", "-e", "/data/chicago_crimes_sample.csv"],
             capture_output=True, timeout=5,
         )
-        if result.returncode == 0:
+        if r.returncode == 0:
             return "cluster"
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
@@ -65,372 +51,167 @@ def detect_environment():
 
 
 ENV = detect_environment()
+print(f"=== Environment: {ENV} ===")
+
+# Initialize SparkSession
+# Note: do NOT call .master() here -- let spark-submit's --master argument
+# win. (The prior bug was setting .master("local[*]") in code, which
+# overrode --master yarn and caused all training to run single-process in
+# the AM container.)
+spark = SparkSession.builder.appName("SE446_M2_PhaseB").getOrCreate()
+spark.sparkContext.setLogLevel("WARN")
+print(f"Spark version : {spark.version}")
+print(f"Master        : {spark.sparkContext.master}")
+print(f"App ID        : {spark.sparkContext.applicationId}")
+
+if ENV == "cluster" and not spark.sparkContext.master.startswith("yarn"):
+    raise RuntimeError(
+        f"Expected master=yarn on cluster, got {spark.sparkContext.master!r}. "
+        f"Aborting before the AM container exhausts memory.")
+# --- end Task 11 scaffolding ----------------------------------------------
 
 
-# ----------------------------------------------------------------------------
-# Spark session
-# ----------------------------------------------------------------------------
-def build_spark(env):
-    from pyspark.sql import SparkSession
-
-    if env == "cluster":
-        # On YARN. --master / --deploy-mode are passed via spark-submit;
-        # we deliberately do NOT call .master(...) here so we don't override
-        # the spark-submit setting (that was the original bug).
-        spark = (
-            SparkSession.builder
-            .appName("SE446_M2_Phase_C_ArrestPrediction")
-            .config("spark.sql.shuffle.partitions", "8")
-            .config("spark.driver.maxResultSize", "128m")
-            .config("spark.serializer",
-                    "org.apache.spark.serializer.KryoSerializer")
-            .getOrCreate()
-        )
-    else:
-        spark = (
-            SparkSession.builder
-            .appName("SE446_M2_Phase_C_ArrestPrediction_Local")
-            .master("local[*]")
-            .config("spark.sql.shuffle.partitions", "4")
-            .config("spark.driver.memory", "2g")
-            .getOrCreate()
-        )
-
-    spark.sparkContext.setLogLevel("WARN")
-    return spark
-
-
-# ----------------------------------------------------------------------------
-# Data loading
-#   Cluster:  HDFS Chicago Crimes (full 7M+ rows, sampled 5% for ML).
-#   Local:    Generated 10,000 realistic rows (same generator as W09B).
-# ----------------------------------------------------------------------------
-def load_cluster_data(spark):
-    from pyspark.sql.functions import col, hour, to_timestamp
-
-    # Phase A (analytics) wants the full dataset; Phase B (ML) needs the
-    # smaller sample to fit the cluster memory budget. The milestone spec
-    # allows df.sample(0.05, seed=42) OR hdfs:///data/chicago_crimes_sample.csv.
-    raw_df = spark.read.csv(
-        "hdfs:///data/chicago_crimes.csv",
-        header=True, inferSchema=True,
-    )
-    print(f"[cluster] raw rows: {raw_df.count():,}")
-
-    df = (
-        raw_df
-        .withColumn("Hour", hour(to_timestamp(col("Date"), "MM/dd/yyyy hh:mm:ss a")))
-        .select(
-            col("District"),
-            col("Primary Type").alias("PrimaryType"),
-            col("Hour"),
-            col("Domestic").cast("string").alias("Domestic_str"),
-            col("Arrest"),
-        )
-        .dropna()
-        .withColumn("label", col("Arrest").cast("integer"))
-    )
-
-    # 2% sample for ML (Phase B memory budget on the small cluster).
-    # The spec allows df.sample(0.05, seed=42); we reduce further to 0.02
-    # because the cluster's AM heap is only 512 MB and GBT's driver-side
-    # collectAsMap OOMs on 5%. With 0.02 we get ~140k rows -- still well
-    # above the 10k local fallback, and trains in ~2-3 min per model.
-    df = df.sample(fraction=0.02, seed=42).coalesce(8)
-    return df
-
-
-def load_local_data(spark):
-    from pyspark.sql import Row
-    import random
-
-    random.seed(42)
-
-    crime_profiles = {
-        "NARCOTICS":           0.85,
-        "PROSTITUTION":        0.80,
-        "WEAPONS VIOLATION":   0.60,
-        "BATTERY":             0.30,
-        "ASSAULT":             0.25,
-        "ROBBERY":             0.15,
-        "THEFT":               0.10,
-        "BURGLARY":            0.08,
-        "MOTOR VEHICLE THEFT": 0.06,
-        "CRIMINAL DAMAGE":     0.05,
-    }
-    districts = list(range(1, 26))
-
-    def generate_row():
-        crime_type = random.choice(list(crime_profiles.keys()))
-        base_rate = crime_profiles[crime_type]
-        district = random.choice(districts)
-        hour_val = random.randint(0, 23)
-        domestic = random.random() < 0.15
-        arrest_prob = base_rate + (0.20 if domestic else 0)
-        if 2 <= hour_val <= 5:
-            arrest_prob -= 0.10
-        arrest_prob = max(0.01, min(0.99, arrest_prob))
-        arrest = random.random() < arrest_prob
-        return Row(
-            District=district,
-            PrimaryType=crime_type,
-            Hour=hour_val,
-            Domestic_str=str(domestic).lower(),
-            Arrest=arrest,
-            label=int(arrest),
-        )
-
-    rows = [generate_row() for _ in range(10_000)]
-    return spark.createDataFrame(rows)
-
-
-# ----------------------------------------------------------------------------
+print("=== Loading Data ===")
+# Use sample data to fit cluster memory budget for Phase B
+raw_df = spark.read.csv(
+    "hdfs:///data/chicago_crimes_sample.csv",
+    header=True, inferSchema=True
+)
+df = raw_df.withColumn(
+    "Hour", hour(to_timestamp(col("Date"), "MM/dd/yyyy hh:mm:ss a"))
+)
+df = df.select(
+    col("District"),
+    col("Primary Type").alias("PrimaryType"),
+    col("Hour"),
+    col("Domestic").cast("string").alias("Domestic_str"),
+    col("Arrest")
+).dropna()
+df = df.withColumn("label", col("Arrest").cast("integer"))
+# ============================================
 # Task 5: Feature Engineering Pipeline
-# ----------------------------------------------------------------------------
-def build_feature_pipeline_stages():
-    from pyspark.ml.feature import StringIndexer, VectorAssembler
+# ============================================
+print("\n=== Task 5: Feature Engineering Pipeline ===")
+crime_indexer = StringIndexer(
+    inputCol="PrimaryType",
+    outputCol="crime_index",
+    handleInvalid="skip"
+)
+domestic_indexer = StringIndexer(
+    inputCol="Domestic_str",
+    outputCol="domestic_index",
+    handleInvalid="skip"
+)
+assembler = VectorAssembler(
+    inputCols=["District", "crime_index", "Hour", "domestic_index"],
+    outputCol="features"
+)
+# Show features for 5 sample rows
+print("Showing sample features before training:")
+temp = crime_indexer.fit(df).transform(df)
+temp = domestic_indexer.fit(temp).transform(temp)
+temp = assembler.transform(temp)
+temp.select("PrimaryType", "Domestic_str", "District", "Hour", "features", "label").show(5, truncate=False)
+train_df, test_df = df.randomSplit([0.8, 0.2], seed=42)
+train_df.cache()
+# ============================================
+# Task 6: Train and Evaluate Three Models
+# ============================================
+print("\n=== Task 6: Train and Evaluate Three Models ===")
+binary_eval = BinaryClassificationEvaluator(labelCol="label")
+mc_eval = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction")
+def evaluate_model(model_name, predictions, train_time):
+    auc = binary_eval.evaluate(predictions)
+    acc = mc_eval.evaluate(predictions, {mc_eval.metricName: "accuracy"})
+    f1 = mc_eval.evaluate(predictions, {mc_eval.metricName: "f1"})
+    prec = mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedPrecision"})
+    rec = mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedRecall"})
 
-    crime_indexer = StringIndexer(
-        inputCol="PrimaryType",
-        outputCol="crime_index",
-        handleInvalid="skip",
-    )
-    domestic_indexer = StringIndexer(
-        inputCol="Domestic_str",
-        outputCol="domestic_index",
-        handleInvalid="skip",
-    )
-    assembler = VectorAssembler(
-        inputCols=["District", "crime_index", "Hour", "domestic_index"],
-        outputCol="features",
-    )
-    return crime_indexer, domestic_indexer, assembler
+    print(f"\n--- {model_name} Metrics ---")
+    print(f"  Training Time: {train_time:.1f}s")
+    print(f"  AUC-ROC:   {auc:.4f}")
+    print(f"  Accuracy:  {acc:.4f}")
+    print(f"  F1 Score:  {f1:.4f}")
+    print(f"  Precision: {prec:.4f}")
+    print(f"  Recall:    {rec:.4f}")
 
+    print(f"\n--- Confusion Matrix ({model_name}) ---")
+    predictions.groupBy("label", "prediction").count().orderBy("label", "prediction").show()
+    return auc, acc, f1, prec, rec
+# 1. Logistic Regression
+lr = LogisticRegression(featuresCol="features", labelCol="label", maxIter=100, regParam=0.01)
+pipeline_lr = Pipeline(stages=[crime_indexer, domestic_indexer, assembler, lr])
+t0 = time.time()
+model_lr = pipeline_lr.fit(train_df)
+t_lr = time.time() - t0
+preds_lr = model_lr.transform(test_df)
+metrics_lr = evaluate_model("Logistic Regression", preds_lr, t_lr)
+# 2. Random Forest
+rf = RandomForestClassifier(featuresCol="features", labelCol="label", numTrees=100, maxDepth=5, seed=42)
+pipeline_rf = Pipeline(stages=[crime_indexer, domestic_indexer, assembler, rf])
+t0 = time.time()
+model_rf = pipeline_rf.fit(train_df)
+t_rf = time.time() - t0
+preds_rf = model_rf.transform(test_df)
+metrics_rf = evaluate_model("Random Forest", preds_rf, t_rf)
+# 3. GBT
+gbt = GBTClassifier(featuresCol="features", labelCol="label", maxIter=50, maxDepth=5, seed=42)
+pipeline_gbt = Pipeline(stages=[crime_indexer, domestic_indexer, assembler, gbt])
+t0 = time.time()
+model_gbt = pipeline_gbt.fit(train_df)
+t_gbt = time.time() - t0
+preds_gbt = model_gbt.transform(test_df)
+metrics_gbt = evaluate_model("GBT", preds_gbt, t_gbt)
+print("\n=== Model Comparison Table ===")
+print("=" * 90)
+print(f"{'Metric':<20} {'Random Forest':>15} {'Logistic Reg':>15} {'GBT':>15}")
+print("=" * 90)
+print(f"{'AUC-ROC':<20} {metrics_rf[0]:>15.4f} {metrics_lr[0]:>15.4f} {metrics_gbt[0]:>15.4f}")
+print(f"{'Accuracy':<20} {metrics_rf[1]:>15.4f} {metrics_lr[1]:>15.4f} {metrics_gbt[1]:>15.4f}")
+print(f"{'F1 Score':<20} {metrics_rf[2]:>15.4f} {metrics_lr[2]:>15.4f} {metrics_gbt[2]:>15.4f}")
+print(f"{'Training Time (s)':<20} {t_rf:>15.1f} {t_lr:>15.1f} {t_gbt:>15.1f}")
+print("=" * 90)
+# ============================================
+# Task 7: Feature Importances & Interpretation
+# ============================================
+print("\n=== Task 7: Feature Importances & Interpretation ===")
+rf_model = model_rf.stages[-1]
+feature_names = ["District", "crime_index", "Hour", "domestic_index"]
+importances = rf_model.featureImportances.toArray()
+print("--- Feature Importances (Random Forest) ---")
+for name, imp in sorted(zip(feature_names, importances), key=lambda x: -x[1]):
+    bar = "#" * int(imp * 40)
+    print(f"  {name:<18} {imp:.4f}  {bar}")
+print("\n--- Interpretation Answers ---")
+print("Which feature is most important?")
+print("The 'crime_index' is the most important feature.")
+print("Does this match the arrest rate analysis from Task 4?")
+print("Yes, crime types like NARCOTICS and PROSTITUTION have significantly higher arrest rates compared to others.")
+print("\nWhy does Logistic Regression perform worse than tree-based models on this data?")
+print("Logistic Regression assumes features contribute linearly. It treats 'crime_index' as an ordered continuous number, which is incorrect for categorical data. Tree models capture non-linear patterns and split correctly on index values.")
 
-# ----------------------------------------------------------------------------
-# Task 6: Train + evaluate three classifiers, return a comparison dict.
-# ----------------------------------------------------------------------------
-def train_and_evaluate(train_df, test_df, stages, env):
-    from pyspark.ml import Pipeline
-    from pyspark.ml.classification import (
-        LogisticRegression, RandomForestClassifier, GBTClassifier,
-    )
-    from pyspark.ml.evaluation import (
-        BinaryClassificationEvaluator,
-        MulticlassClassificationEvaluator,
-    )
+# --- Task 11 scaffolding: save best model as evidence ---------------------
+print("\n=== Saving best model (Task 11 evidence) ===")
+candidates = {
+    "LogisticRegression": (model_lr, metrics_lr[0]),
+    "RandomForest":       (model_rf, metrics_rf[0]),
+    "GBT":                (model_gbt, metrics_gbt[0]),
+}
+best_name = max(candidates, key=lambda k: candidates[k][1])
+best_model, best_auc = candidates[best_name]
+print(f"Best by AUC: {best_name} (AUC = {best_auc:.4f})")
 
-    binary_eval = BinaryClassificationEvaluator(labelCol="label")
-    mc_eval = MulticlassClassificationEvaluator(
-        labelCol="label", predictionCol="prediction",
-    )
+user_id = os.environ.get("USER", "abdulaziz")
+save_path = (
+    f"hdfs:///user/{user_id}/project/m2/best_model"
+    if ENV == "cluster"
+    else f"file:///tmp/m2_best_model_{best_name}"
+)
+try:
+    best_model.write().overwrite().save(save_path)
+    print(f"Saved best model to: {save_path}")
+except Exception as e:
+    print(f"[warn] could not save model: {e}")
+# --- end Task 11 scaffolding ----------------------------------------------
 
-    def evaluate(predictions):
-        return {
-            "AUC":       binary_eval.evaluate(predictions),
-            "Accuracy":  mc_eval.evaluate(predictions, {mc_eval.metricName: "accuracy"}),
-            "F1":        mc_eval.evaluate(predictions, {mc_eval.metricName: "f1"}),
-            "Precision": mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedPrecision"}),
-            "Recall":    mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedRecall"}),
-        }
-
-    def confusion(predictions):
-        rows = (
-            predictions.groupBy("label", "prediction").count()
-            .orderBy("label", "prediction").collect()
-        )
-        m = {(0, 0): 0, (0, 1): 0, (1, 0): 0, (1, 1): 0}
-        for r in rows:
-            m[(int(r["label"]), int(r["prediction"]))] = r["count"]
-        return m  # TN, FP, FN, TP
-
-    # Per-model parameters. Cluster values are tuned for the 1536 MB / 1
-    # vCore YARN container cap on the SE446 cluster (RF and especially GBT
-    # OOM at the spec's 100 trees / 50 iterations).
-    classifiers = [
-        ("LogisticRegression", LogisticRegression(
-            featuresCol="features", labelCol="label",
-            maxIter=100, regParam=0.01,
-        )),
-        ("RandomForest", RandomForestClassifier(
-            featuresCol="features", labelCol="label",
-            numTrees=40 if env == "cluster" else 50,
-            maxDepth=5, seed=42,
-        )),
-        ("GBT", GBTClassifier(
-            featuresCol="features", labelCol="label",
-            maxIter=10 if env == "cluster" else 20,
-            maxDepth=3 if env == "cluster" else 5,
-            stepSize=0.1, seed=42,
-        )),
-    ]
-
-    results = {}
-    fitted_models = {}
-    for name, clf in classifiers:
-        pipeline = Pipeline(stages=list(stages) + [clf])
-        print(f"\n[training] {name} ...")
-        t = time.time()
-        try:
-            model = pipeline.fit(train_df)
-        except Exception as exc:                            # pragma: no cover
-            # Don't lose LR/RF results if GBT blows up on the cluster.
-            print(f"[ERROR] {name} training failed: {exc!r}")
-            results[name] = {
-                "AUC": float("nan"), "Accuracy": float("nan"),
-                "F1": float("nan"), "Precision": float("nan"),
-                "Recall": float("nan"),
-                "TrainingTime_s": round(time.time() - t, 2),
-                "Confusion": {"TN": 0, "FP": 0, "FN": 0, "TP": 0},
-                "Error": str(exc),
-            }
-            continue
-
-        train_time = time.time() - t
-        predictions = model.transform(test_df)
-        metrics = evaluate(predictions)
-        cm = confusion(predictions)
-        metrics["TrainingTime_s"] = round(train_time, 2)
-        metrics["Confusion"] = {
-            "TN": cm[(0, 0)], "FP": cm[(0, 1)],
-            "FN": cm[(1, 0)], "TP": cm[(1, 1)],
-        }
-        results[name] = metrics
-        fitted_models[name] = model
-        print(f"[done]     {name} in {train_time:.1f}s  AUC={metrics['AUC']:.4f}")
-
-    return results, fitted_models
-
-
-def print_comparison_table(results):
-    print("\n" + "=" * 78)
-    print("Task 6 -- Three-Model Comparison")
-    print("=" * 78)
-    header = f"{'Model':<22}{'AUC':>8}{'Acc':>8}{'F1':>8}{'Prec':>8}{'Rec':>8}{'Time(s)':>10}"
-    print(header)
-    print("-" * len(header))
-    for name, m in results.items():
-        print(
-            f"{name:<22}"
-            f"{m['AUC']:>8.4f}"
-            f"{m['Accuracy']:>8.4f}"
-            f"{m['F1']:>8.4f}"
-            f"{m['Precision']:>8.4f}"
-            f"{m['Recall']:>8.4f}"
-            f"{m['TrainingTime_s']:>10.2f}"
-        )
-
-    print("\nConfusion matrices (label x prediction):")
-    for name, m in results.items():
-        cm = m["Confusion"]
-        print(f"  {name}:  TN={cm['TN']:>7}  FP={cm['FP']:>7}  "
-              f"FN={cm['FN']:>7}  TP={cm['TP']:>7}")
-
-
-# ----------------------------------------------------------------------------
-# Task 7: Feature importances + interpretation
-# ----------------------------------------------------------------------------
-def print_feature_importances(rf_pipeline_model):
-    rf = rf_pipeline_model.stages[-1]
-    names = ["District", "crime_index", "Hour", "domestic_index"]
-    importances = rf.featureImportances.toArray()
-
-    print("\n" + "=" * 78)
-    print("Task 7 -- Random Forest Feature Importances")
-    print("=" * 78)
-    for name, imp in sorted(zip(names, importances), key=lambda x: -x[1]):
-        bar = "#" * int(imp * 40)
-        print(f"  {name:<18} {imp:.4f}  {bar}")
-
-
-# ----------------------------------------------------------------------------
-# Main entry point
-# ----------------------------------------------------------------------------
-def main():
-    print("=" * 78)
-    print("SE446 Milestone 2 -- Phase C standalone Spark ML script")
-    print("Author : Abdulaziz AlSharif (ID: 230055)")
-    print(f"Env    : {ENV}")
-    print("=" * 78)
-
-    spark = build_spark(ENV)
-    print(f"Spark version : {spark.version}")
-    print(f"Master        : {spark.sparkContext.master}")
-    print(f"App ID        : {spark.sparkContext.applicationId}")
-
-    # Fail fast if the master ended up as local while we expected yarn --
-    # this is the failure mode that caused the previous three runs.
-    if ENV == "cluster" and not spark.sparkContext.master.startswith("yarn"):
-        raise RuntimeError(
-            f"Expected master=yarn on cluster, got {spark.sparkContext.master!r}. "
-            f"Aborting before we exhaust driver memory.")
-
-    # ---- Load ----
-    print("\n[load] reading data ...")
-    if ENV == "cluster":
-        df = load_cluster_data(spark)
-    else:
-        df = load_local_data(spark)
-    n = df.count()
-    print(f"[load] working rows: {n:,}")
-    df.printSchema()
-
-    # ---- Task 5: feature engineering preview ----
-    crime_idx, domestic_idx, assembler = build_feature_pipeline_stages()
-    print("\n=== Task 5: Feature Engineering Preview ===")
-    print("Vector layout = [District, crime_index, Hour, domestic_index]")
-    fitted_crime = crime_idx.fit(df)
-    fitted_dom = domestic_idx.fit(df)
-    sample = assembler.transform(fitted_dom.transform(fitted_crime.transform(df)))
-    sample.select(
-        "PrimaryType", "crime_index",
-        "District", "Hour",
-        "Domestic_str", "domestic_index",
-        "features", "label",
-    ).show(5, truncate=False)
-
-    # ---- Train / test split ----
-    train_df, test_df = df.randomSplit([0.8, 0.2], seed=42)
-    train_df.cache()
-    print(f"[split] train={train_df.count():,}  test={test_df.count():,}")
-
-    # ---- Task 6: train + evaluate all three models ----
-    stages = (crime_idx, domestic_idx, assembler)
-    results, fitted = train_and_evaluate(train_df, test_df, stages, ENV)
-    print_comparison_table(results)
-
-    # ---- Task 7: feature importances from RF ----
-    if "RandomForest" in fitted:
-        print_feature_importances(fitted["RandomForest"])
-    else:
-        print("\n[warn] RandomForest model not available -- skipping Task 7 importances.")
-
-    # ---- Save best model as evidence (hint #9 in the spec) ----
-    valid = {k: v for k, v in results.items()
-             if not (isinstance(v.get("AUC"), float) and v["AUC"] != v["AUC"])}
-    if not valid:
-        print("\n[warn] no successful models -- nothing to save.")
-        spark.stop()
-        return
-    best_name = max(valid.items(), key=lambda kv: kv[1]["AUC"])[0]
-    print(f"\nBest model by AUC: {best_name}  "
-          f"(AUC = {valid[best_name]['AUC']:.4f})")
-
-    user_id = os.environ.get("USER", "abdulaziz")
-    if ENV == "cluster":
-        save_path = f"hdfs:///user/{user_id}/project/m2/best_model"
-    else:
-        save_path = f"file:///tmp/m2_best_model_{best_name}"
-
-    try:
-        fitted[best_name].write().overwrite().save(save_path)
-        print(f"[save] best model saved to: {save_path}")
-    except Exception as exc:                           # pragma: no cover
-        print(f"[save] could not save model ({exc}). Continuing.")
-
-    print("\n=== Phase C run complete ===")
-    spark.stop()
-
-
-if __name__ == "__main__":
-    main()
+spark.stop()
