@@ -14,11 +14,24 @@ from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier, LogisticRegression, GBTClassifier
 from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator
 
+# Output file path in your cluster home directory
+LOG_FILE_PATH = "/tmp/my_results.txt"
+
+# Custom log function that prints to console AND writes to your file
+def log_write(text):
+    print(text)
+    with open(LOG_FILE_PATH, "a") as f:
+        f.write(text + "\n")
+
+# Clear the log file if it exists from a previous run
+if os.path.exists(LOG_FILE_PATH):
+    os.remove(LOG_FILE_PATH)
+
 # Initialize SparkSession
 spark = SparkSession.builder.appName("SE446_M2_PhaseB").getOrCreate()
 spark.sparkContext.setLogLevel("WARN")
 
-print("=== Loading Data ===")
+log_write("=== Loading Data ===")
 # Use sample data to fit cluster memory budget for Phase B
 raw_df = spark.read.csv(
     "hdfs:///data/chicago_crimes_sample.csv",
@@ -41,7 +54,7 @@ df = df.withColumn("label", col("Arrest").cast("integer"))
 # ============================================
 # Task 5: Feature Engineering Pipeline
 # ============================================
-print("\n=== Task 5: Feature Engineering Pipeline ===")
+log_write("\n=== Task 5: Feature Engineering Pipeline ===")
 crime_indexer = StringIndexer(
     inputCol="PrimaryType",
     outputCol="crime_index",
@@ -60,11 +73,14 @@ assembler = VectorAssembler(
 )
 
 # Show features for 5 sample rows
-print("Showing sample features before training:")
+log_write("Showing sample features before training:")
 temp = crime_indexer.fit(df).transform(df)
 temp = domestic_indexer.fit(temp).transform(temp)
 temp = assembler.transform(temp)
-temp.select("PrimaryType", "Domestic_str", "District", "Hour", "features", "label").show(5, truncate=False)
+
+# Fix: Extract dataframe output as a string so it writes into the file cleanly
+sample_rows_str = temp.select("PrimaryType", "Domestic_str", "District", "Hour", "features", "label")._jdf.showString(5, 20, False)
+log_write(sample_rows_str)
 
 train_df, test_df = df.randomSplit([0.8, 0.2], seed=42)
 train_df.cache()
@@ -72,7 +88,7 @@ train_df.cache()
 # ============================================
 # Task 6: Train and Evaluate Three Models
 # ============================================
-print("\n=== Task 6: Train and Evaluate Three Models ===")
+log_write("\n=== Task 6: Train and Evaluate Three Models ===")
 
 binary_eval = BinaryClassificationEvaluator(labelCol="label")
 mc_eval = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction")
@@ -84,16 +100,18 @@ def evaluate_model(model_name, predictions, train_time):
     prec = mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedPrecision"})
     rec = mc_eval.evaluate(predictions, {mc_eval.metricName: "weightedRecall"})
     
-    print(f"\n--- {model_name} Metrics ---")
-    print(f"  Training Time: {train_time:.1f}s")
-    print(f"  AUC-ROC:   {auc:.4f}")
-    print(f"  Accuracy:  {acc:.4f}")
-    print(f"  F1 Score:  {f1:.4f}")
-    print(f"  Precision: {prec:.4f}")
-    print(f"  Recall:    {rec:.4f}")
+    log_write(f"\n--- {model_name} Metrics ---")
+    log_write(f"  Training Time: {train_time:.1f}s")
+    log_write(f"  AUC-ROC:   {auc:.4f}")
+    log_write(f"  Accuracy:  {acc:.4f}")
+    log_write(f"  F1 Score:  {f1:.4f}")
+    log_write(f"  Precision: {prec:.4f}")
+    log_write(f"  Recall:    {rec:.4f}")
     
-    print(f"\n--- Confusion Matrix ({model_name}) ---")
-    predictions.groupBy("label", "prediction").count().orderBy("label", "prediction").show()
+    log_write(f"\n--- Confusion Matrix ({model_name}) ---")
+    # Fix: Extract matrix data as a string so it writes into the file cleanly
+    matrix_str = predictions.groupBy("label", "prediction").count().orderBy("label", "prediction")._jdf.showString(20, 20, False)
+    log_write(matrix_str)
     return auc, acc, f1, prec, rec
 
 # 1. Logistic Regression
@@ -126,35 +144,35 @@ t_gbt = time.time() - t0
 preds_gbt = model_gbt.transform(test_df)
 metrics_gbt = evaluate_model("GBT", preds_gbt, t_gbt)
 
-print("\n=== Model Comparison Table ===")
-print("=" * 90)
-print(f"{'Metric':<20} {'Random Forest':>15} {'Logistic Reg':>15} {'GBT':>15}")
-print("=" * 90)
-print(f"{'AUC-ROC':<20} {metrics_rf[0]:>15.4f} {metrics_lr[0]:>15.4f} {metrics_gbt[0]:>15.4f}")
-print(f"{'Accuracy':<20} {metrics_rf[1]:>15.4f} {metrics_lr[1]:>15.4f} {metrics_gbt[1]:>15.4f}")
-print(f"{'F1 Score':<20} {metrics_rf[2]:>15.4f} {metrics_lr[2]:>15.4f} {metrics_gbt[2]:>15.4f}")
-print(f"{'Training Time (s)':<20} {t_rf:>15.1f} {t_lr:>15.1f} {t_gbt:>15.1f}")
-print("=" * 90)
+log_write("\n=== Model Comparison Table ===")
+log_write("=" * 90)
+log_write(f"{'Metric':<20} {'Random Forest':>15} {'Logistic Reg':>15} {'GBT':>15}")
+log_write("=" * 90)
+log_write(f"{'AUC-ROC':<20} {metrics_rf[0]:>15.4f} {metrics_lr[0]:>15.4f} {metrics_gbt[0]:>15.4f}")
+log_write(f"{'Accuracy':<20} {metrics_rf[1]:>15.4f} {metrics_lr[1]:>15.4f} {metrics_gbt[1]:>15.4f}")
+log_write(f"{'F1 Score':<20} {metrics_rf[2]:>15.4f} {metrics_lr[2]:>15.4f} {metrics_gbt[2]:>15.4f}")
+log_write(f"{'Training Time (s)':<20} {t_rf:>15.1f} {t_lr:>15.1f} {t_gbt:>15.1f}")
+log_write("=" * 90)
 
 # ============================================
 # Task 7: Feature Importances & Interpretation
 # ============================================
-print("\n=== Task 7: Feature Importances & Interpretation ===")
+log_write("\n=== Task 7: Feature Importances & Interpretation ===")
 rf_model = model_rf.stages[-1]
 feature_names = ["District", "crime_index", "Hour", "domestic_index"]
 importances = rf_model.featureImportances.toArray()
 
-print("--- Feature Importances (Random Forest) ---")
+log_write("--- Feature Importances (Random Forest) ---")
 for name, imp in sorted(zip(feature_names, importances), key=lambda x: -x[1]):
     bar = "#" * int(imp * 40)
-    print(f"  {name:<18} {imp:.4f}  {bar}")
+    log_write(f"  {name:<18} {imp:.4f}  {bar}")
 
-print("\n--- Interpretation Answers ---")
-print("Which feature is most important?")
-print("The 'crime_index' is the most important feature.")
-print("Does this match the arrest rate analysis from Task 4?")
-print("Yes, crime types like NARCOTICS and PROSTITUTION have significantly higher arrest rates compared to others.")
-print("\nWhy does Logistic Regression perform worse than tree-based models on this data?")
-print("Logistic Regression assumes features contribute linearly. It treats 'crime_index' as an ordered continuous number, which is incorrect for categorical data. Tree models capture non-linear patterns and split correctly on index values.")
+log_write("\n--- Interpretation Answers ---")
+log_write("Which feature is most important?")
+log_write("The 'crime_index' is the most important feature.")
+log_write("Does this match the arrest rate analysis from Task 4?")
+log_write("Yes, crime types like NARCOTICS and PROSTITUTION have significantly higher arrest rates compared to others.")
+log_write("\nWhy does Logistic Regression perform worse than tree-based models on this data?")
+log_write("Logistic Regression assumes features contribute linearly. It treats 'crime_index' as an ordered continuous number, which is incorrect for categorical data. Tree models capture non-linear patterns and split correctly on index values.")
 
 spark.stop()

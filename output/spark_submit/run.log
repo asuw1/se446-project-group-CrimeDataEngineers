@@ -1,0 +1,99 @@
+wkharbat@master-node:~$ grep -A 150 "=== Task 5: Feature Engineering Pipeline ===" final_logs.txt
+=== Task 5: Feature Engineering Pipeline ===
+Showing sample features before training:
++--------------------+------------+--------+----+--------------------+-----+
+|         PrimaryType|Domestic_str|District|Hour|            features|label|
++--------------------+------------+--------+----+--------------------+-----+
+|OFFENSE INVOLVING...|       false|      10|   3| [10.0,12.0,3.0,0.0]|    1|
+|           NARCOTICS|       false|      11|  16|[11.0,10.0,16.0,0.0]|    1|
+|             ROBBERY|       false|      14|   9|  [14.0,7.0,9.0,0.0]|    1|
+| CRIM SEXUAL ASSAULT|       false|       1|  10| [1.0,25.0,10.0,0.0]|    0|
+|     CRIMINAL DAMAGE|       false|       1|  17|  [1.0,2.0,17.0,0.0]|    0|
++--------------------+------------+--------+----+--------------------+-----+
+only showing top 5 rows
+
+
+=== Task 6: Train and Evaluate Three Models ===
+
+--- Logistic Regression Metrics ---
+  Training Time: 18.1s
+  AUC-ROC:   0.6654
+  Accuracy:  0.8740
+  F1 Score:  0.8206
+  Precision: 0.8235
+  Recall:    0.8740
+
+--- Confusion Matrix (Logistic Regression) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1674|
+|    0|       1.0|    6|
+|    1|       0.0|  236|
+|    1|       1.0|    5|
++-----+----------+-----+
+
+
+--- Random Forest Metrics ---
+  Training Time: 13.8s
+  AUC-ROC:   0.7787
+  Accuracy:  0.8943
+  F1 Score:  0.8663
+  Precision: 0.8850
+  Recall:    0.8943
+
+--- Confusion Matrix (Random Forest) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1667|
+|    0|       1.0|   13|
+|    1|       0.0|  190|
+|    1|       1.0|   51|
++-----+----------+-----+
+
+
+--- GBT Metrics ---
+  Training Time: 57.9s
+  AUC-ROC:   0.7899
+  Accuracy:  0.8969
+  F1 Score:  0.8727
+  Precision: 0.8865
+  Recall:    0.8969
+
+--- Confusion Matrix (GBT) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1663|
+|    0|       1.0|   17|
+|    1|       0.0|  181|
+|    1|       1.0|   60|
++-----+----------+-----+
+
+
+=== Model Comparison Table ===
+==========================================================================================
+Metric                 Random Forest    Logistic Reg             GBT
+==========================================================================================
+AUC-ROC                       0.7787          0.6654          0.7899
+Accuracy                      0.8943          0.8740          0.8969
+F1 Score                      0.8663          0.8206          0.8727
+Training Time (s)               13.8            18.1            57.9
+==========================================================================================
+
+=== Task 7: Feature Importances & Interpretation ===
+--- Feature Importances (Random Forest) ---
+  crime_index        0.8898  ###################################
+  Hour               0.0514  ##
+  District           0.0362  #
+  domestic_index     0.0225
+
+--- Interpretation Answers ---
+Which feature is most important?
+The 'crime_index' is the most important feature.
+Does this match the arrest rate analysis from Task 4?
+Yes, crime types like NARCOTICS and PROSTITUTION have significantly higher arrest rates compared to others.
+
+Why does Logistic Regression perform worse than tree-based models on this data?
+Logistic Regression assumes features contribute linearly. It treats 'crime_index' as an ordered continuous number, which is incorrect for categorical data. Tree models capture non-linear patterns and split correctly on index values.
