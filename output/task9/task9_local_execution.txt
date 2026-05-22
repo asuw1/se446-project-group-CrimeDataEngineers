@@ -1,0 +1,234 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/05/21 22:52:39 WARN Utils: Your hostname, Abdulazizs-MacBook-Pro-6.local, resolves to a loopback address: 127.0.0.1; using 192.168.100.13 instead (on interface en0)
+26/05/21 22:52:39 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/05/21 22:52:40 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Spark Version: 4.1.1
+Master: local[*]
+Input: data/chicago_crimes_sample.csv
+Total Rows: 10000
+
+Task 1: Top 10 Crime Types
++-------------------+-----+
+|Primary Type       |count|
++-------------------+-----+
+|THEFT              |2054 |
+|BATTERY            |1728 |
+|CRIMINAL DAMAGE    |1062 |
+|MOTOR VEHICLE THEFT|948  |
+|ASSAULT            |878  |
+|DECEPTIVE PRACTICE |799  |
+|OTHER OFFENSE      |586  |
+|ROBBERY            |508  |
+|BURGLARY           |316  |
+|WEAPONS VIOLATION  |284  |
++-------------------+-----+
+
+
+Task 2: Top 10 Location Hotspots using Spark SQL
++--------------------------------------+-----+
+|Location Description                  |total|
++--------------------------------------+-----+
+|STREET                                |2737 |
+|APARTMENT                             |1909 |
+|RESIDENCE                             |1358 |
+|SIDEWALK                              |536  |
+|PARKING LOT / GARAGE (NON RESIDENTIAL)|362  |
+|SMALL RETAIL STORE                    |234  |
+|ALLEY                                 |219  |
+|RESTAURANT                            |187  |
+|OTHER (SPECIFY)                       |156  |
+|VEHICLE NON-COMMERCIAL                |139  |
++--------------------------------------+-----+
+
+
+Task 3: Crime Trend Over Years
++----+-----+
+|Year|count|
++----+-----+
+|2001|4    |
+|2002|2    |
+|2003|1    |
+|2004|6    |
+|2005|19   |
+|2006|4    |
+|2007|7    |
+|2008|16   |
+|2009|5    |
+|2010|5    |
+|2011|7    |
+|2012|9    |
+|2013|10   |
+|2014|16   |
+|2015|28   |
+|2016|20   |
+|2017|49   |
+|2018|28   |
+|2019|36   |
+|2020|25   |
+|2021|83   |
+|2022|135  |
+|2023|9446 |
+|2024|39   |
++----+-----+
+
+Saved chart: output/m2_phase_a/task3_yearly_trend.png
+
+Task 4: Overall Arrest Rate
++---------------------------+
+|overall_arrest_rate_percent|
++---------------------------+
+|                      12.83|
++---------------------------+
+
+
+Task 4: Arrest Rate by Top 10 Crime Types
++-------------------+------------+-------------------+
+|Primary Type       |total_crimes|arrest_rate_percent|
++-------------------+------------+-------------------+
+|THEFT              |2054        |4.97               |
+|BATTERY            |1728        |19.39              |
+|CRIMINAL DAMAGE    |1062        |4.33               |
+|MOTOR VEHICLE THEFT|948         |4.54               |
+|ASSAULT            |878         |9.11               |
+|DECEPTIVE PRACTICE |799         |4.38               |
+|OTHER OFFENSE      |586         |15.7               |
+|ROBBERY            |508         |9.65               |
+|BURGLARY           |316         |9.81               |
+|WEAPONS VIOLATION  |284         |52.46              |
++-------------------+------------+-------------------+
+
+
+Highest Arrest Rates among Top Crime Types
++-----------------+------------+-------------------+
+|Primary Type     |total_crimes|arrest_rate_percent|
++-----------------+------------+-------------------+
+|WEAPONS VIOLATION|284         |52.46              |
+|BATTERY          |1728        |19.39              |
+|OTHER OFFENSE    |586         |15.7               |
++-----------------+------------+-------------------+
+only showing top 3 rows
+
+Lowest Arrest Rates among Top Crime Types
++-------------------+------------+-------------------+
+|Primary Type       |total_crimes|arrest_rate_percent|
++-------------------+------------+-------------------+
+|CRIMINAL DAMAGE    |1062        |4.33               |
+|DECEPTIVE PRACTICE |799         |4.38               |
+|MOTOR VEHICLE THEFT|948         |4.54               |
++-------------------+------------+-------------------+
+only showing top 3 rows
+WARNING: Using incubator modules: jdk.incubator.vector
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/05/21 22:53:45 WARN Utils: Your hostname, Abdulazizs-MacBook-Pro-6.local, resolves to a loopback address: 127.0.0.1; using 192.168.100.13 instead (on interface en0)
+26/05/21 22:53:45 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/05/21 22:53:46 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/05/21 22:53:59 WARN InstanceBuilder: Failed to load implementation from:dev.ludovic.netlib.blas.JNIBLAS
+Spark Version: 4.1.1
+Master: local[*]
+=== Loading Data ===
+Total Rows: 10000
+
+=== Task 5: Feature Engineering Pipeline ===
+Showing sample features before training:
++--------------------------+------------+--------+----+--------------------+-----+
+|PrimaryType               |Domestic_str|District|Hour|features            |label|
++--------------------------+------------+--------+----+--------------------+-----+
+|OFFENSE INVOLVING CHILDREN|false       |10      |3   |[10.0,12.0,3.0,0.0] |1    |
+|NARCOTICS                 |false       |11      |16  |[11.0,10.0,16.0,0.0]|1    |
+|ROBBERY                   |false       |14      |9   |[14.0,7.0,9.0,0.0]  |1    |
+|CRIM SEXUAL ASSAULT       |false       |1       |10  |[1.0,25.0,10.0,0.0] |0    |
+|CRIMINAL DAMAGE           |false       |1       |17  |[1.0,2.0,17.0,0.0]  |0    |
++--------------------------+------------+--------+----+--------------------+-----+
+only showing top 5 rows
+
+=== Task 6: Train and Evaluate Three Models ===
+
+--- Logistic Regression Metrics ---
+  Training Time: 3.5s
+  AUC-ROC:   0.6654
+  Accuracy:  0.8740
+  F1 Score:  0.8206
+  Precision: 0.8235
+  Recall:    0.8740
+
+--- Confusion Matrix (Logistic Regression) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1674|
+|    0|       1.0|    6|
+|    1|       0.0|  236|
+|    1|       1.0|    5|
++-----+----------+-----+
+
+
+--- Random Forest Metrics ---
+  Training Time: 3.4s
+  AUC-ROC:   0.7819
+  Accuracy:  0.8943
+  F1 Score:  0.8663
+  Precision: 0.8850
+  Recall:    0.8943
+
+--- Confusion Matrix (Random Forest) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1667|
+|    0|       1.0|   13|
+|    1|       0.0|  190|
+|    1|       1.0|   51|
++-----+----------+-----+
+
+
+--- GBT Metrics ---
+  Training Time: 11.2s
+  AUC-ROC:   0.7899
+  Accuracy:  0.8969
+  F1 Score:  0.8727
+  Precision: 0.8865
+  Recall:    0.8969
+
+--- Confusion Matrix (GBT) ---
++-----+----------+-----+
+|label|prediction|count|
++-----+----------+-----+
+|    0|       0.0| 1663|
+|    0|       1.0|   17|
+|    1|       0.0|  181|
+|    1|       1.0|   60|
++-----+----------+-----+
+
+
+=== Model Comparison Table ===
+==========================================================================================
+Metric                 Random Forest    Logistic Reg             GBT
+==========================================================================================
+AUC-ROC                       0.7819          0.6654          0.7899
+Accuracy                      0.8943          0.8740          0.8969
+F1 Score                      0.8663          0.8206          0.8727
+Training Time (s)                3.4             3.5            11.2
+==========================================================================================
+
+=== Task 7: Feature Importances & Interpretation ===
+--- Feature Importances (Random Forest) ---
+  crime_index        0.8965  ###################################
+  Hour               0.0475  #
+  District           0.0341  #
+  domestic_index     0.0219  
+
+--- Interpretation Answers ---
+Which feature is most important?
+The 'crime_index' is the most important feature.
+Does this match the arrest rate analysis from Task 4?
+Yes, crime types like NARCOTICS and PROSTITUTION have significantly higher arrest rates compared to others.
+
+Why does Logistic Regression perform worse than tree-based models on this data?
+Logistic Regression assumes features contribute linearly. It treats 'crime_index' as an ordered continuous number, which is incorrect for categorical data. Tree models capture non-linear patterns and split correctly on index values.
