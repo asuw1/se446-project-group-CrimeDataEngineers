@@ -615,3 +615,112 @@ packageJobJar: [] [/opt/hadoop-3.4.1/share/hadoop/tools/lib/hadoop-streaming-3.4
 | Abdulaziz AlSenani | 230524 | Task 3 — Wrote mapper and reducer for location hotspot analysis |
 | Wadee Kharbat | 230685 | Task 4 — Wrote mapper and reducer for yearly crime trend analysis |
 | Sulaiman AlEiteibi | 220391 | Task 5 — Wrote mapper and reducer for arrest rate analysis |
+
+---
+
+## Phase C: Deployment -- Task 11 (spark-submit, YARN cluster mode)
+
+**Owner**: Abdulaziz AlSharif (ID: 230055)
+**Scope**: Task 11 (spark-submit on YARN cluster mode). Tasks 9 and 10 are submitted on separate branches by Abdulaziz AlSenani.
+
+### Artifact
+
+The standalone Spark ML script for Phase B (Tasks 5-7) is [`m2_spark_ml.py`](./m2_spark_ml.py) at the repo root — authored by Wadee Feras Kharbat. Task 11 takes that script and submits it to the Hadoop cluster via `spark-submit` in YARN cluster mode. The runner script, runbook and cluster evidence for this submission live in [`task11_alsharif/`](./task11_alsharif/).
+
+### spark-submit command
+
+```bash
+spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --driver-memory 1024m \
+    --num-executors 1 \
+    --executor-memory 1g \
+    --executor-cores 1 \
+    --conf spark.driver.maxResultSize=128m \
+    --conf spark.yarn.am.memoryOverhead=256 \
+    --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=python3.12 \
+    --conf spark.executorEnv.PYSPARK_PYTHON=python3.12 \
+    m2_spark_ml.py
+```
+
+`--deploy-mode cluster` is mandatory: the master VM is small (~4 GB) and shared with Hadoop daemons; running the driver on master in client mode is OOM-killed by YARN. In cluster mode the driver runs on a worker.
+
+The milestone spec template uses `--driver-memory 512m`. With the group's full-spec hyperparameters (RF 100 trees / depth 5, GBT 50 iter / depth 5) the driver-side `collectAsMap` of tree splits OOMs the AM at 512m. YARN's max container is 1536 MB, so we use 1024 MB driver + 256 MB overhead = 1280 MB AM container (still under the cap).
+
+### Data
+
+Per the spec ("sample the data with `df.sample(0.05, seed=42)` or use `hdfs:///data/chicago_crimes_sample.csv` so training fits the cluster's memory budget"), this run uses the pre-sampled file:
+
+- **Source**: `hdfs:///data/chicago_crimes_sample.csv`
+- **Test rows**: 1,921 (after `dropna()`); train rows ~7,700 on the 80/20 `seed=42` split.
+
+### Execution evidence
+
+- **Application ID**: `application_1778738889964_0046`
+- **Final status**: `SUCCEEDED`
+- **ApplicationMaster host**: `worker-node-1`
+- **Total runtime**: ~3 min 37 s (13:31:56 -> 13:35:33 UTC, 2026-05-21)
+- **Spark version**: 3.5.4
+- **Master (driver-reported)**: `yarn`
+
+The full driver stdout and YARN logs are stitched into [`task11_alsharif/output/spark_submit/run.log`](./task11_alsharif/output/spark_submit/run.log).
+
+### Task 5 - Feature engineering preview
+
+Vector layout = `[District, crime_index, Hour, domestic_index]`.
+
+| PrimaryType                  | Domestic_str | District | Hour | features                  | label |
+|------------------------------|:------------:|---------:|-----:|:--------------------------|------:|
+| OFFENSE INVOLVING CHILDREN   | false        | 10       | 3    | `[10.0, 12.0, 3.0, 0.0]`   | 1     |
+| NARCOTICS                    | false        | 11       | 16   | `[11.0, 10.0, 16.0, 0.0]`  | 1     |
+| ROBBERY                      | false        | 14       | 9    | `[14.0, 7.0, 9.0, 0.0]`    | 1     |
+| CRIM SEXUAL ASSAULT          | false        | 1        | 10   | `[1.0, 25.0, 10.0, 0.0]`   | 0     |
+| CRIMINAL DAMAGE              | false        | 1        | 17   | `[1.0, 2.0, 17.0, 0.0]`    | 0     |
+
+### Task 6 - Three-model comparison (cluster results)
+
+| Metric              | Random Forest | Logistic Reg | GBT          |
+|---------------------|--------------:|-------------:|-------------:|
+| AUC-ROC             | 0.7787        | 0.6654       | **0.7899**   |
+| Accuracy            | 0.8943        | 0.8740       | **0.8969**   |
+| F1 Score            | 0.8663        | 0.8206       | **0.8727**   |
+| Precision           | 0.8850        | 0.8235       | **0.8865**   |
+| Recall              | 0.8943        | 0.8740       | **0.8969**   |
+| Training time (s)   | 13.8          | 17.2         | 58.2         |
+
+**Confusion matrices** (rows = true label, columns = predicted):
+
+| Model              | TN   | FP | FN  | TP |
+|--------------------|-----:|---:|----:|---:|
+| Logistic Regression| 1674 |  6 | 236 |  5 |
+| Random Forest      | 1667 | 13 | 190 | 51 |
+| GBT                | 1663 | 17 | 181 | 60 |
+
+The test set is heavily imbalanced -- 1,680 no-arrest rows vs. 241 arrest rows (~87.5% / 12.5%). Logistic Regression posts 0.874 accuracy but only catches 5 of the 241 arrests (TP=5, FN=236); it's essentially predicting "no arrest" almost everywhere. Tree-based models recover real signal: RF lifts true positives to 51 and GBT to 60, while keeping false positives in single/low double digits. GBT wins on every metric except training time.
+
+### Task 7 - Random Forest feature importances
+
+```
+crime_index        0.8898  ###################################
+Hour               0.0514  ##
+District           0.0362  #
+domestic_index     0.0225
+```
+
+`crime_index` carries ~89% of the importance mass, which matches the M1 / Task 4 arrest-rate analysis: arrest probability is driven mostly by crime type (NARCOTICS, PROSTITUTION etc. arrest at very high rates; THEFT / BURGLARY very low). `Hour`, `District`, and `Domestic` are secondary signals.
+
+This also explains why Logistic Regression underperforms: it treats the ordinal `crime_index` as a continuous, linearly-correlated feature, which it isn't. Tree models split on `crime_index` values directly and capture the non-linear, "lookup-table" shape of the arrest rate.
+
+### How to reproduce
+
+```bash
+# from your laptop
+scp m2_spark_ml.py task11_alsharif/run_task11_spark_submit.sh abfalsharif@134.209.172.50:~/
+
+ssh abfalsharif@134.209.172.50
+chmod +x run_task11_spark_submit.sh
+./run_task11_spark_submit.sh
+```
+
+Detailed steps and troubleshooting are in [`task11_alsharif/RUNBOOK_TASK11.md`](./task11_alsharif/RUNBOOK_TASK11.md). The evidence file [`task11_alsharif/output/spark_submit/run.log`](./task11_alsharif/output/spark_submit/run.log) contains the combined `spark-submit` terminal output plus the driver stdout extracted from `yarn logs -applicationId application_1778738889964_0046` — i.e. everything required by the spec.
