@@ -1,3 +1,98 @@
+SE446 M2 -- Task 11 evidence
+Author : Abdulaziz AlSharif (ID: 230055)
+Date   : Thu May 21 13:35:38 UTC 2026
+AppId  : application_1778738889964_0046
+
+----- spark-submit terminal output -----
+26/05/21 13:31:48 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+26/05/21 13:31:49 INFO DefaultNoHARMFailoverProxyProvider: Connecting to ResourceManager at master-node/134.209.172.50:8032
+26/05/21 13:31:50 INFO Configuration: resource-types.xml not found
+26/05/21 13:31:50 INFO ResourceUtils: Unable to find 'resource-types.xml'.
+26/05/21 13:31:50 INFO Client: Verifying our application has not requested more than the maximum memory capability of the cluster (1536 MB per container)
+26/05/21 13:31:50 INFO Client: Will allocate AM container, with 1408 MB memory including 384 MB overhead
+26/05/21 13:31:50 INFO Client: Setting up container launch context for our AM
+26/05/21 13:31:50 INFO Client: Setting up the launch environment for our AM container
+26/05/21 13:31:50 INFO Client: Preparing resources for our AM container
+26/05/21 13:31:50 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/commons-pool2-2.12.0.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/commons-pool2-2.12.0.jar
+26/05/21 13:31:51 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/kafka-clients-3.9.0.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/kafka-clients-3.9.0.jar
+26/05/21 13:31:52 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-sql-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/spark-sql-kafka-0-10_2.12-3.5.4.jar
+26/05/21 13:31:53 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/jars/kafka/spark-token-provider-kafka-0-10_2.12-3.5.4.jar -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/spark-token-provider-kafka-0-10_2.12-3.5.4.jar
+26/05/21 13:31:53 INFO Client: Uploading resource file:/home/abfalsharif/m2_spark_ml.py -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/m2_spark_ml.py
+26/05/21 13:31:54 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/pyspark.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/pyspark.zip
+26/05/21 13:31:55 INFO Client: Uploading resource file:/opt/spark-3.5.4-bin-hadoop3/python/lib/py4j-0.10.9.7-src.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/py4j-0.10.9.7-src.zip
+26/05/21 13:31:55 INFO Client: Uploading resource file:/tmp/spark-e10aff26-dee7-4a43-a2ca-55d7dc0fb811/__spark_conf__9877333133866294887.zip -> hdfs://master-node:9000/user/abfalsharif/.sparkStaging/application_1778738889964_0046/__spark_conf__.zip
+26/05/21 13:31:56 INFO SecurityManager: Changing view acls to: abfalsharif
+26/05/21 13:31:56 INFO SecurityManager: Changing modify acls to: abfalsharif
+26/05/21 13:31:56 INFO SecurityManager: Changing view acls groups to: 
+26/05/21 13:31:56 INFO SecurityManager: Changing modify acls groups to: 
+26/05/21 13:31:56 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: abfalsharif; groups with view permissions: EMPTY; users with modify permissions: abfalsharif; groups with modify permissions: EMPTY
+26/05/21 13:31:56 INFO Client: Submitting application application_1778738889964_0046 to ResourceManager
+26/05/21 13:31:56 INFO YarnClientImpl: Submitted application application_1778738889964_0046
+26/05/21 13:31:57 INFO Client: Application report for application_1778738889964_0046 (state: ACCEPTED)
+26/05/21 13:31:57 INFO Client: 
+	 client token: N/A
+	 diagnostics: AM container is launched, waiting for AM container to Register with RM
+	 ApplicationMaster host: N/A
+	 ApplicationMaster RPC port: -1
+	 queue: root.default
+	 start time: 1779370316600
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0046/
+	 user: abfalsharif
+26/05/21 13:32:17 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:32:17 INFO Client: 
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: worker-node-1
+	 ApplicationMaster RPC port: 37965
+	 queue: root.default
+	 start time: 1779370316600
+	 final status: UNDEFINED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0046/
+	 user: abfalsharif
+26/05/21 13:32:47 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:33:17 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:33:47 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:34:18 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:34:48 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:35:18 INFO Client: Application report for application_1778738889964_0046 (state: RUNNING)
+26/05/21 13:35:33 INFO Client: Application report for application_1778738889964_0046 (state: FINISHED)
+26/05/21 13:35:33 INFO Client: 
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: worker-node-1
+	 ApplicationMaster RPC port: 37965
+	 queue: root.default
+	 start time: 1779370316600
+	 final status: SUCCEEDED
+	 tracking URL: http://master-node:8088/proxy/application_1778738889964_0046/
+	 user: abfalsharif
+26/05/21 13:35:33 INFO ShutdownHookManager: Shutdown hook called
+26/05/21 13:35:33 INFO ShutdownHookManager: Deleting directory /tmp/spark-54207630-c109-4cdf-be28-c674e0b5d422
+26/05/21 13:35:33 INFO ShutdownHookManager: Deleting directory /tmp/spark-e10aff26-dee7-4a43-a2ca-55d7dc0fb811
+
+----- yarn logs -applicationId application_1778738889964_0046  (excerpt: driver stdout) -----
+LogType:stdout
+LogLastModifiedTime:Thu May 21 13:35:34 +0000 2026
+LogLength:3873
+LogContents:
+=== Environment: cluster ===
+Spark version : 3.5.4
+Master        : yarn
+App ID        : application_1778738889964_0046
+=== Loading Data ===
+
+=== Task 5: Feature Engineering Pipeline ===
+Showing sample features before training:
++--------------------------+------------+--------+----+--------------------+-----+
+|PrimaryType               |Domestic_str|District|Hour|features            |label|
++--------------------------+------------+--------+----+--------------------+-----+
+|OFFENSE INVOLVING CHILDREN|false       |10      |3   |[10.0,12.0,3.0,0.0] |1    |
+|NARCOTICS                 |false       |11      |16  |[11.0,10.0,16.0,0.0]|1    |
+|ROBBERY                   |false       |14      |9   |[14.0,7.0,9.0,0.0]  |1    |
+|CRIM SEXUAL ASSAULT       |false       |1       |10  |[1.0,25.0,10.0,0.0] |0    |
+|CRIMINAL DAMAGE           |false       |1       |17  |[1.0,2.0,17.0,0.0]  |0    |
++--------------------------+------------+--------+----+--------------------+-----+
 wkharbat@master-node:~$ grep -A 150 "=== Task 5: Feature Engineering Pipeline ===" final_logs.txt
 === Task 5: Feature Engineering Pipeline ===
 Showing sample features before training:

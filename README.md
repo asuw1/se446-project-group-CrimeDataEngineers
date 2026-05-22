@@ -77,9 +77,9 @@ Map input records=10001
 Map output records=10000
 Reduce input groups=29
 Reduce output records=29
-File Input Format Counters 
+File Input Format Counters
 Bytes Read=2391290
-File Output Format Counters 
+File Output Format Counters
 Bytes Written=541
 Output directory: /user/abfalsharif/project/m1/task2
 ```
