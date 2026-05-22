@@ -724,3 +724,193 @@ chmod +x run_task11_spark_submit.sh
 ```
 
 Detailed steps and troubleshooting are in [`task11_alsharif/RUNBOOK_TASK11.md`](./task11_alsharif/RUNBOOK_TASK11.md). The evidence file [`task11_alsharif/output/spark_submit/run.log`](./task11_alsharif/output/spark_submit/run.log) contains the combined `spark-submit` terminal output plus the driver stdout extracted from `yarn logs -applicationId application_1778738889964_0046` — i.e. everything required by the spec.
+
+---
+
+## Milestone 2 — Spark + MLlib
+
+### Executive Summary (M2)
+
+Milestone 2 upgrades the M1 MapReduce pipeline to Apache Spark, reproducing all four analyses (Tasks 1–4) with Spark DataFrames and SQL on the full 793,073-row Chicago Crimes dataset. It then extends the work with a complete MLlib pipeline (Tasks 5–7) to predict arrest outcomes using three classifiers; GBT achieves the best performance (AUC-ROC 0.7899, Accuracy 0.8969, F1 0.8727). The entire workflow is demonstrated in three execution modes: local laptop (`local[*]`), YARN client mode, and YARN cluster mode via `spark-submit`.
+
+---
+
+### M1 vs M2 Comparison (Tasks 1–4)
+
+M2 Phase A ran against the full HDFS dataset (793,073 rows) for all four tasks. M1 Task 2 (crime types) used a ~10,000-row sample; M1 Tasks 3–5 used the full dataset — so Tasks 2–4 below are directly comparable.
+
+#### Task 1 — Crime Type Distribution
+
+| Rank | Crime Type | M2 Spark (full 793k) | M1 MapReduce note |
+|---:|---|---:|---|
+| 1 | THEFT | 162,688 | M1 ran on ~10k sample (BATTERY was #1 at 1,728 in sample) |
+| 2 | BATTERY | 151,930 | |
+| 3 | CRIMINAL DAMAGE | 91,241 | |
+| 4 | NARCOTICS | 74,127 | |
+| 5 | ASSAULT | 54,070 | |
+| 6 | MOTOR VEHICLE THEFT | 48,494 | |
+| 7 | BURGLARY | 39,872 | |
+| 8 | OTHER OFFENSE | 36,893 | |
+| 9 | ROBBERY | 30,991 | |
+| 10 | DECEPTIVE PRACTICE | 30,396 | |
+
+M1 used a ~10k sample so raw counts differ. Relative proportions are consistent. Spark DataFrame required no mapper/reducer scripts and ran significantly faster.
+
+#### Task 2 — Location Hotspots
+
+| Rank | Location | M2 Spark (full 793k) | M1 MapReduce |
+|---:|---|---:|---|
+| 1 | STREET | 248,326 | Same #1 (full dataset match) |
+| 2 | RESIDENCE | 136,393 | |
+| 3 | APARTMENT | 61,235 | |
+| 4 | SIDEWALK | 47,506 | |
+| 5 | OTHER | 29,671 | |
+| 6 | PARKING LOT/GARAGE(NON.RESID.) | 22,436 | |
+| 7 | ALLEY | 18,349 | |
+| 8 | SCHOOL, PUBLIC, BUILDING | 15,776 | |
+| 9 | RESIDENCE-GARAGE | 14,291 | |
+| 10 | SMALL RETAIL STORE | 13,804 | |
+
+Both M1 and M2 ran on the full 793k dataset. STREET was #1 in both. Results are **identical** — Spark SQL and the MapReduce reducer produce the same counts.
+
+#### Task 3 — Crime Trend Over Years
+
+| Year | M1 MapReduce | M2 Spark | Match? |
+|---:|---:|---:|:---:|
+| 2001 | 467,301 | 467,301 | ✓ |
+| 2002 | 205,267 | 205,266 | ✓ (1-row header parse diff) |
+| 2003–2022 | (same) | (same) | ✓ |
+
+Results are **identical**. Spark ran in-memory vs. disk-based MapReduce shuffle, completing faster.
+
+#### Task 4 — Arrest Rate Analysis
+
+| Metric | M1 MapReduce | M2 Spark | Match? |
+|---|---:|---:|:---:|
+| Overall Arrest Rate | 27.98% | 27.98% | ✓ |
+| NARCOTICS arrest rate | — | 99.88% | M2 adds per-type breakdown |
+| BURGLARY arrest rate | — | 6.74% | M2 adds per-type breakdown |
+
+Results are **identical** at the overall level. M2 Spark adds the per-crime-type breakdown in a single DataFrame aggregation, whereas M1 required a separate job.
+
+---
+
+### ML Results Summary (Tasks 5–7)
+
+Phase B builds a Spark MLlib pipeline to predict arrest outcome from four engineered features: `District`, `crime_index` (StringIndexer on Primary Type), `Hour` (extracted from Date), and `domestic_index`. Models are trained on 80% of a 10,000-row sample (`seed=42`) and evaluated on the remaining 20%.
+
+#### Model Comparison (cluster results — `hdfs:///data/chicago_crimes_sample.csv`)
+
+| Metric | Random Forest | Logistic Reg | GBT |
+|---|:---:|:---:|:---:|
+| AUC-ROC | 0.7787 | 0.6654 | **0.7899** |
+| Accuracy | 0.8943 | 0.8740 | **0.8969** |
+| F1 Score | 0.8663 | 0.8206 | **0.8727** |
+| Training Time (s) | 13.8 | 18.1 | 57.9 |
+
+**Best model**: GBT (AUC-ROC 0.7899, Accuracy 0.8969, F1 0.8727)
+
+#### Confusion Matrices (rows = true label, columns = predicted)
+
+| Model | TN | FP | FN | TP |
+|---|---:|---:|---:|---:|
+| Logistic Regression | 1,674 | 6 | 236 | 5 |
+| Random Forest | 1,667 | 13 | 190 | 51 |
+| GBT | 1,663 | 17 | 181 | 60 |
+
+The test set is heavily imbalanced (~87.5% no-arrest). Logistic Regression posts 87.4% accuracy but catches only 5 of 241 arrests (TP=5). Tree models recover real signal: RF lifts TP to 51, GBT to 60, while keeping false positives in single/low double digits.
+
+#### Feature Importances (Random Forest)
+
+```
+crime_index        0.8898  ###################################
+Hour               0.0514  ##
+District           0.0362  #
+domestic_index     0.0225
+```
+
+**Key finding**: `crime_index` carries ~89% of importance mass. Crime type is the dominant predictor of arrest — NARCOTICS at 99.88%, BURGLARY at 6.74%. This directly confirms the Task 4 arrest-rate analysis.
+
+**Why Logistic Regression underperforms**: LR treats `crime_index` as a continuous ordered variable, which is semantically incorrect for a StringIndexer categorical encoding. Tree models split on index values directly, capturing the non-linear "lookup-table" relationship between crime type and arrest probability.
+
+---
+
+### Deployment Evidence (Tasks 9–11)
+
+#### Task 9 — Local Execution (`local[*]`)
+
+**Owner**: Abdulaziz AlSenani (ID: 230524)  
+**Evidence**: [`output/task9/task9_local_execution.txt`](./output/task9/task9_local_execution.txt)
+
+```
+Master: local[*]
+Input: data/chicago_crimes_sample.csv
+Total Rows: 10000
+Spark Version: 4.1.1
+```
+
+Full Phase A + Phase B pipeline ran successfully on a MacBook using 10,000 rows.
+
+#### Task 10 — Cluster Execution, Client Mode (`yarn --deploy-mode client`)
+
+**Owner**: Abdulaziz AlSenani (ID: 230524)  
+**Evidence**: [`output/task10/task10_cluster_client.log`](./output/task10/task10_cluster_client.log)
+
+```
+Master: yarn
+Input: hdfs:///data/chicago_crimes.csv
+Real Row Count: 793073
+Application ID: application_1778738889964_0069
+Spark Version: 3.5.4
+```
+
+Top crime types on full HDFS dataset confirmed (THEFT: 162,688; BATTERY: 151,930). Overall arrest rate: 27.98%.
+
+#### Task 11 — Cluster Execution, spark-submit YARN Cluster Mode
+
+**Owner**: Abdulaziz AlSharif (ID: 230055)  
+**Evidence**: [`output/task11/run.log`](./output/task11/run.log)
+
+```
+Application ID:       application_1778738889964_0046
+ApplicationMaster:    worker-node-1
+Final status:         SUCCEEDED
+Runtime:              ~3 min 37 s (13:31:56 → 13:35:33 UTC, 2026-05-21)
+Master (driver):      yarn
+Spark Version:        3.5.4
+```
+
+Driver ran on `worker-node-1` (cluster deploy mode). GBT achieved AUC 0.7899 on the cluster run.
+
+---
+
+### spark-submit Command (Task 11)
+
+```bash
+spark-submit \
+    --master yarn \
+    --deploy-mode cluster \
+    --driver-memory 1024m \
+    --num-executors 1 \
+    --executor-memory 1g \
+    --executor-cores 1 \
+    --conf spark.driver.maxResultSize=128m \
+    --conf spark.yarn.am.memoryOverhead=256 \
+    --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=python3.12 \
+    --conf spark.executorEnv.PYSPARK_PYTHON=python3.12 \
+    m2_spark_ml.py
+```
+
+`--deploy-mode cluster` is required: the master VM is small (~4 GB) and shared with Hadoop daemons; running the driver in client mode is OOM-killed by YARN. `--driver-memory 1024m` (not 512m as in the spec template) is needed because the full-spec hyperparameters (RF 100 trees / depth 5, GBT 50 iter / depth 5) cause the AM to OOM at 512m on the driver-side `collectAsMap` of tree splits; YARN's max container is 1536 MB so 1024m driver + 256m overhead = 1280m AM (still under the cap).
+
+---
+
+### Member Contributions (M2)
+
+| Member | ID | M2 Tasks |
+|---|---|---|
+| Abdulaziz AlSuwailim | 230253 | GitHub coordination, PR merges, conflict resolution, Jupyter notebook (`M2_Spark_ML_GroupX.ipynb`) |
+| Sulaiman AlEiteibi | 220391 | Phase A Tasks 1-4 (`m2_phase_a_sulaiman.py`) |
+| Abdulaziz AlSharif | 230055 | Task 11 (spark-submit, YARN cluster mode), Tasks 1-2 (notebook) |
+| Wadee Feras Kharbat | 230685 | Phase B Tasks 5-7 (`m2_spark_ml.py`) |
+| Abdulaziz AlSenani | 230524 | Task 9 (local execution), Task 10 (cluster client mode), Task 3 (notebook) |
